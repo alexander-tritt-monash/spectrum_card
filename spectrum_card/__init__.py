@@ -1,3 +1,144 @@
+"""
+Translation from DLL commands
+-----------------------------
+
+.. list-table:: Card identity
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_PCITYP`
+    - :obj:`Card.get_name`, :obj:`Card.get_series_information`
+  * - Read
+    - :obj:`SPC_PCISERIALNO`
+    - :obj:`Card.get_serial_number`
+  * - Read
+    - :obj:`SPC_PCIDATE`
+    - :obj:`Card.get_production_date_information`
+  * - Read
+    - :obj:`SPC_CALIBDATE`
+    - :obj:`Card.get_calibration_date_information`
+  * - Write
+    - :obj:`SPC_CARDIDENTIFICATION`
+    - :obj:`Card.identification_led_enable`, :obj:`Card.identification_led_disable`
+  * - Read
+    - :obj:`SPC_CARDIDENTIFICATION`
+    - :obj:`Card.get_card_identification`
+
+
+.. list-table:: Card information
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_MIINST_MODULES`
+    - :obj:`Card.get_number_of_front_end_modules`
+  * - Read
+    - :obj:`SPC_MIINST_CHPERMODULE`
+    - :obj:`Card.get_number_of_channels_per_front_end_module`
+  * - Read
+    - :obj:`SPC_MIINST_MAXADCVALUE`
+    - :obj:`Card.get_adc_full_scale`
+  * - Read
+    - :obj:`SPC_MIINST_MINEXTCLOCK`
+    - :obj:`Card.get_min_external_clock`
+  * - Read
+    - :obj:`SPC_MIINST_MAXEXTCLOCK`
+    - :obj:`Card.get_max_external_clock`
+  * - Read
+    - :obj:`SPC_MIINST_MINEXTREFCLOCK`
+    - :obj:`Card.get_min_external_reference_clock`
+  * - Read
+    - :obj:`SPC_MIINST_MAXEXTREFCLOCK`
+    - :obj:`Card.get_max_external_reference_clock`
+
+
+.. list-table:: Temperature
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_MON_TK_BASE_CTRL`, :obj:`SPC_MON_TC_BASE_CTRL`, :obj:`SPC_MON_TF_BASE_CTRL`
+    - :obj:`Card.get_temperature_base`
+  * - Read
+    - :obj:`SPC_MON_TK_MODULE_0`, :obj:`SPC_MON_TC_MODULE_0`, :obj:`SPC_MON_TF_MODULE_0`
+    - :obj:`Card.get_temperature_module_0`
+  * - Read
+    - :obj:`SPC_MON_TK_MODULE_1`, :obj:`SPC_MON_TC_MODULE_1`, :obj:`SPC_MON_TF_MODULE_1`
+    - :obj:`Card.get_temperature_module_1`
+
+
+.. list-table:: Hardware and PCB version
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_PCIVERSION`
+    - :obj:`Card.get_pci_information`
+  * - Read
+    - :obj:`SPC_BASEPCBVERSION`
+    - :obj:`Card.get_base_pcb_information`
+  * - Read
+    - :obj:`SPC_PCIMODULEVERSION`
+    - :obj:`Card.get_module_pci_information`
+  * - Read
+    - :obj:`SPC_MODULEPCBVERSION`
+    - :obj:`Card.get_module_pcb_information`
+  * - Read
+    - :obj:`SPC_PCIEXTVERSION`
+    - :obj:`Card.get_extension_pci_information`
+  * - Read
+    - :obj:`SPC_EXTPCBVERSION`
+    - :obj:`Card.get_extension_pcb_information`
+  * - Read
+    - :obj:`SPC_PXIHWSLOTNO`
+    - :obj:`Card.get_pxi_slot_number`
+
+
+.. list-table:: Firmware information
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPCM_FW_CTRL`
+    - :obj:`Card.get_firmware_version_control_information`
+  * - Read
+    - :obj:`SPCM_FW_CTRL_GOLDEN`
+    - :obj:`Card.get_firmware_version_control_golden_information`
+  * - Read
+    - :obj:`SPCM_FW_CTRL_ACTIVE`
+    - :obj:`Card.get_firmware_version_control_active_information`
+  * - Read
+    - :obj:`SPCM_FW_CLOCK`
+    - :obj:`Card.get_firmware_version_clock_information`
+  * - Read
+    - :obj:`SPCM_FW_CONFIG`
+    - :obj:`Card.get_firmware_version_configuration_information`
+  * - Read
+    - :obj:`SPCM_FW_MODULEA`
+    - :obj:`Card.get_firmware_version_module_a_information`
+  * - Read
+    - :obj:`SPCM_FW_MODULEB`
+    - :obj:`Card.get_firmware_version_module_b_information`
+  * - Read
+    - :obj:`SPCM_FW_MODEXTRA`
+    - :obj:`Card.get_firmware_version_module_star_information`
+  * - Read
+    - :obj:`SPCM_FW_POWER`
+    - :obj:`Card.get_firmware_version_power_information`
+
+"""
+
 from spectrum_card.spectrum_header import pyspcm as spcm
 from spectrum_card.spectrum_header import spcm_tools
 
@@ -327,28 +468,94 @@ class Card:
   
   # Card information ------------------------------------------------------------
   def get_number_of_front_end_modules(self):
+    """
+    Reads :obj:`SPC_MIINST_MODULES`.
+
+    Returns
+    -------
+    number : :obj:`int`
+    """
     return self._get_int32(spcm.SPC_MIINST_MODULES)
   
   def get_number_of_channels_per_front_end_module(self):
+    """
+    Reads :obj:`SPC_MIINST_CHPERMODULE`.
+
+    Returns
+    -------
+    number : :obj:`int`
+    """
     return self._get_int32(spcm.SPC_MIINST_CHPERMODULE)
   
   def get_adc_full_scale(self):
+    """
+    Reads :obj:`SPC_MIINST_MAXADCVALUE`.
+
+    Returns
+    -------
+    full_scale : :obj:`int`
+    """
     return self._get_int32(spcm.SPC_MIINST_MAXADCVALUE)
   
   def get_min_external_clock(self):
+    """
+    Reads :obj:`SPC_MIINST_MINEXTCLOCK`.
+
+    Returns
+    -------
+    frequency : :obj:`int`
+      Minimum allowed external clock frequency in Hz.
+    """
     return self._get_int32(spcm.SPC_MIINST_MINEXTCLOCK)
   
   def get_max_external_clock(self):
+    """
+    Reads :obj:`SPC_MIINST_MAXEXTCLOCK`.
+
+    Returns
+    -------
+    frequency : :obj:`int`
+      Maximum allowed external clock frequency in Hz.
+    """
     return self._get_int32(spcm.SPC_MIINST_MAXEXTCLOCK)
   
   def get_min_external_reference_clock(self):
+    """
+    Reads :obj:`SPC_MIINST_MINEXTREFCLOCK`.
+
+    Returns
+    -------
+    frequency : :obj:`int`
+      Minimum allowed reference clock frequency in Hz.
+    """
     return self._get_int32(spcm.SPC_MIINST_MINEXTREFCLOCK)
   
   def get_max_external_reference_clock(self):
+    """
+    Reads :obj:`SPC_MIINST_MAXEXTREFCLOCK`.
+
+    Returns
+    -------
+    frequency : :obj:`int`
+      Maximum allowed reference clock frequency in Hz.
+    """
     return self._get_int32(spcm.SPC_MIINST_MAXEXTREFCLOCK)
   
-  # Card information ------------------------------------------------------------
+  # Temperature -----------------------------------------------------------------
   def get_temperature_base(self, unit = "C"):
+    """
+    Reads :obj:`SPC_MON_TK_BASE_CTRL`, :obj:`SPC_MON_TC_BASE_CTRL` or :obj:`SPC_MON_TF_BASE_CTRL`.
+
+    Parameters
+    ----------
+    unit : :obj:`str`
+      Either :obj:`"K"` for temperature in Kelvin, :obj:`"C"` for temperature in Celsius (default), or :obj:`"F"` for temperature in Fahrenheit.
+
+    Returns
+    -------
+    temperature : :obj:`int`
+      Temperature in the unit selected (defaulting to Celsius).
+    """
     if unit == "K":
       unit_offset = 0
     if unit == "C":
@@ -358,6 +565,19 @@ class Card:
     return self._get_int32(spcm.SPC_MON_TK_BASE_CTRL + (spcm.SPC_MON_TC_BASE_CTRL - spcm.SPC_MON_TK_BASE_CTRL)*unit_offset)
   
   def get_temperature_module_0(self, unit = "C"):
+    """
+    Reads :obj:`SPC_MON_TK_MODULE_0`, :obj:`SPC_MON_TC_MODULE_0` or :obj:`SPC_MON_TF_MODULE_0`.
+
+    Parameters
+    ----------
+    unit : :obj:`str`
+      Either :obj:`"K"` for temperature in Kelvin, :obj:`"C"` for temperature in Celsius (default), or :obj:`"F"` for temperature in Fahrenheit.
+
+    Returns
+    -------
+    temperature : :obj:`int`
+      Temperature in the unit selected (defaulting to Celsius).
+    """
     if unit == "K":
       unit_offset = 0
     if unit == "C":
@@ -367,6 +587,19 @@ class Card:
     return self._get_int32(spcm.SPC_MON_TK_MODULE_0 + (spcm.SPC_MON_TC_BASE_CTRL - spcm.SPC_MON_TK_BASE_CTRL)*unit_offset)
   
   def get_temperature_module_1(self, unit = "C"):
+    """
+    Reads :obj:`SPC_MON_TK_MODULE_1`, :obj:`SPC_MON_TC_MODULE_1` or :obj:`SPC_MON_TF_MODULE_1`.
+
+    Parameters
+    ----------
+    unit : :obj:`str`
+      Either :obj:`"K"` for temperature in Kelvin, :obj:`"C"` for temperature in Celsius (default), or :obj:`"F"` for temperature in Fahrenheit.
+
+    Returns
+    -------
+    temperature : :obj:`int`
+      Temperature in the unit selected (defaulting to Celsius).
+    """
     if unit == "K":
       unit_offset = 0
     if unit == "C":
@@ -377,111 +610,374 @@ class Card:
 
   # Hardware and PCB version ----------------------------------------------------
   def get_pci_version(self):
+    """
+    Reads :obj:`SPC_PCIVERSION`.
+    For decoded information, use :obj:`get_pci_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code for PCI version
+    """
     return self._get_int32(spcm.SPC_PCIVERSION)
   
   def get_pci_information(self):
+    """
+    Reads :obj:`SPC_PCIVERSION` and displays as a :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Hardware version"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_pci_version()
     return {"Hardware version":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_base_pcb_version(self):
+    """
+    Reads :obj:`SPC_BASEPCBVERSION`.
+    For decoded information, use :obj:`get_base_pcb_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code for PCB version
+    """
     return self._get_int32(spcm.SPC_BASEPCBVERSION)
   
   def get_base_pcb_information(self):
+    """
+    Reads :obj:`SPC_BASEPCBVERSION` and displays as a :obj:`str`.
+
+    Returns
+    -------
+    version : :obj:`str`
+      Version in :obj:`str` format.
+    """
     bitmap = self.get_base_pcb_version()
     return f"{bitmap >> 8}.{bitmap & 0xFF}"
   
   def get_module_pci_version(self):
+    """
+    Reads :obj:`SPC_PCIMODULEVERSION`.
+    For decoded information, use :obj:`get_module_pci_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code for module PCI version
+    """
     return self._get_int32(spcm.SPC_PCIMODULEVERSION)
   
   def get_module_pci_information(self):
+    """
+    Reads :obj:`SPC_PCIMODULEVERSION` and displays as a :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Hardware version"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_module_pci_version()
     return {"Hardware version":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_module_pcb_version(self):
+    """
+    Reads :obj:`SPC_MODULEPCBVERSION`.
+    For decoded information, use :obj:`get_module_pcb_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code for module PCB version
+    """
     return self._get_int32(spcm.SPC_MODULEPCBVERSION)
   
   def get_module_pcb_information(self):
+    """
+    Reads :obj:`SPC_MODULEPCBVERSION` and displays as a :obj:`str`.
+
+    Returns
+    -------
+    version : :obj:`str`
+      Version in :obj:`str` format.
+    """
     bitmap = self.get_module_pcb_version()
     return f"{bitmap >> 8}.{bitmap & 0xFF}"
   
   def get_extension_pci_version(self):
+    """
+    Reads :obj:`SPC_PCIEXTVERSION`.
+    For decoded information, use :obj:`get_extension_pci_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code for extension PCI version
+    """
     return self._get_int32(spcm.SPC_PCIEXTVERSION)
   
   def get_extension_pci_information(self):
+    """
+    Reads :obj:`SPC_PCIEXTVERSION` and displays as a :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Hardware version"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_extension_pci_version()
     return {"Hardware version":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_extension_pcb_version(self):
-    return self._get_int32(spcm.SPC_MODULEPCBVERSION)
+    """
+    Reads :obj:`SPC_EXTPCBVERSION`.
+    For decoded information, use :obj:`get_module_pcb_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code for extension PCB version
+    """
+    return self._get_int32(spcm.SPC_EXTPCBVERSION)
   
   def get_extension_pcb_information(self):
+    """
+    Reads :obj:`SPC_EXTPCBVERSION` and displays as a :obj:`str`.
+
+    Returns
+    -------
+    version : :obj:`str`
+      Version in :obj:`str` format.
+    """
     bitmap = self.get_extension_pcb_version()
     return f"{bitmap >> 8}.{bitmap & 0xFF}"
   
   def get_pxi_slot_number(self):
+    """
+    Reads :obj:`SPC_PXIHWSLOTNO`.
+
+    Returns
+    -------
+    number : :obj:`str`
+      PXI slot number.
+    """
     return self._get_int32(spcm.SPC_PXIHWSLOTNO)
   
   # Firmware information --------------------------------------------------------
   def get_firmware_version_control(self):
+    """
+    Reads :obj:`SPCM_FW_CTRL`.
+    For decoded information, use :obj:`get_firmware_version_control_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_CTRL)
   
   def get_firmware_version_control_information(self):
+    """
+    Reads :obj:`SPCM_FW_CTRL` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_control()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_firmware_version_control_golden(self):
+    """
+    Reads :obj:`SPCM_FW_CTRL_GOLDEN`.
+    For decoded information, use :obj:`get_firmware_version_control_golden_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_CTRL_GOLDEN)
   
   def get_firmware_version_control_golden_information(self):
+    """
+    Reads :obj:`SPCM_FW_CTRL_GOLDEN` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_control_golden()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_firmware_version_control_active(self):
+    """
+    Reads :obj:`SPCM_FW_CTRL_ACTIVE`.
+    For decoded information, use :obj:`get_firmware_version_control_active_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_CTRL_ACTIVE)
   
   def get_firmware_version_control_active_information(self):
+    """
+    Reads :obj:`SPCM_FW_CTRL_ACTIVE` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_control_active()
     return {"Firmware type":(bitmap >> 28), "Firmware version":((bitmap >> 16) & 0xFFF)}
   
   def get_firmware_version_clock(self):
+    """
+    Reads :obj:`SPCM_FW_CLOCK`.
+    For decoded information, use :obj:`get_firmware_version_clock_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_CLOCK)
   
   def get_firmware_version_clock_information(self):
+    """
+    Reads :obj:`SPCM_FW_CLOCK` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_clock()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_firmware_version_configuration(self):
+    """
+    Reads :obj:`SPCM_FW_CONFIG`.
+    For decoded information, use :obj:`get_firmware_version_configuration_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_CONFIG)
   
   def get_firmware_version_configuration_information(self):
+    """
+    Reads :obj:`SPCM_FW_CONFIG` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_configuration()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_firmware_version_module_a(self):
+    """
+    Reads :obj:`SPCM_FW_MODULEA`.
+    For decoded information, use :obj:`get_firmware_version_module_a_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_MODULEA)
   
   def get_firmware_version_module_a_information(self):
+    """
+    Reads :obj:`SPCM_FW_MODULEA` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_module_a()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_firmware_version_module_b(self):
+    """
+    Reads :obj:`SPCM_FW_MODULEB`.
+    For decoded information, use :obj:`get_firmware_version_module_b_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_MODULEB)
   
   def get_firmware_version_module_b_information(self):
+    """
+    Reads :obj:`SPCM_FW_MODULEB` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_module_b()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_firmware_version_module_star(self):
+    """
+    Reads :obj:`SPCM_FW_MODEXTRA`.
+    For decoded information, use :obj:`get_firmware_version_module_star_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_MODEXTRA)
   
   def get_firmware_version_module_star_information(self):
+    """
+    Reads :obj:`SPCM_FW_MODEXTRA` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_module_star()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
   
   def get_firmware_version_power(self):
+    """
+    Reads :obj:`SPCM_FW_POWER`.
+    For decoded information, use :obj:`get_firmware_version_power_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_FW_POWER)
   
   def get_firmware_version_power_information(self):
+    """
+    Reads :obj:`SPCM_FW_POWER` and displays as :obj:`dict`.
+
+    Returns
+    -------
+    version : :obj:`dict`
+      Contains two entries: :obj:`"Firmware type"` and :obj:`"Firmware version"`.
+    """
     bitmap = self.get_firmware_version_power()
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
 
