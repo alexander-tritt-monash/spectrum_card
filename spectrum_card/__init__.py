@@ -137,6 +137,64 @@ Translation from DLL commands
     - :obj:`SPCM_FW_POWER`
     - :obj:`Card.get_firmware_version_power_information`
 
+
+.. list-table:: Driver information
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_GETDRVTYPE`
+    - :obj:`Card.get_driver_information`
+  * - Read
+    - :obj:`SPC_GETDRVVERSION`
+    - :obj:`Card.get_driver_version_information`
+  * - Read
+    - :obj:`SPC_GETKERNELVERSION`
+    - :obj:`Card.get_kernel_version_information`
+
+
+.. list-table:: Modifications
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPCM_CUSTOMMOD`
+    - :obj:`Card.get_modifications_information`
+
+.. list-table:: Features and functions
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_PCIFEATURES`, :obj:`SPC_PCIEXTFEATURES`, :obj:`SPC_READAOFEATURES`, :obj:`SPC_SEQMODE_AVAILFEATURES`
+    - :obj:`Card.get_features_information`
+  * - Read
+    - :obj:`SPC_FNCTYPE`
+    - :obj:`Card.get_functions_information`
+
+  
+.. list-table:: Card mode
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_CARDMODE`
+    - :obj:`set_mode_single`, :obj:`set_mode_multi`, :obj:`set_mode_gate`, :obj:`set_mode_single_restart`, :obj:`set_mode_sequence`, :obj:`set_mode_fifo_single`, :obj:`set_mode_fifo_multi`, :obj:`set_mode_fifo_gate`
+  * - Read
+    - :obj:`SPC_CARDMODE`
+    - :obj:`Card.get_mode_information`
+  * - Read
+    - :obj:`SPC_AVAILCARDMODES`
+    - :obj:`Card.get_available_modes_information`
+
 """
 
 from spectrum_card.spectrum_header import pyspcm as spcm
@@ -983,9 +1041,26 @@ class Card:
 
   # Driver information ----------------------------------------------------------
   def get_driver(self):
+    """
+    Reads :obj:`SPC_GETDRVTYPE`.
+    For decoded information, use :obj:`get_driver_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_GETDRVTYPE)
   
   def get_driver_information(self):
+    """
+    Reads :obj:`SPC_GETDRVTYPE` and displays in :obj:`str` format.
+
+    Returns
+    -------
+    version : :obj:`str`
+      Name of driver.
+    """
     driver = self.get_driver()
     if driver == spcm.DRVTYP_LINUX32:
       return "32 bit Linux"
@@ -999,24 +1074,75 @@ class Card:
       return "64 bit Windows, used by 32 bit application"
     
   def get_driver_version(self):
+    """
+    Reads :obj:`SPC_GETDRVVERSION`.
+    For decoded information, use :obj:`get_driver_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_GETDRVVERSION)
   
   def get_driver_version_information(self):
+    """
+    Reads :obj:`SPC_GETDRVVERSION` and displays in :obj:`str` format.
+
+    Returns
+    -------
+    version : :obj:`str`
+      Version of driver
+    """
     driver_version = self.get_driver_version()
     return f"{driver_version >> 24}.{(driver_version >> 16) & 0xFF} build {(driver_version) & 0xFFFF}"
   
   def get_kernel_version(self):
+    """
+    Reads :obj:`SPC_GETKERNELVERSION`.
+    For decoded information, use :obj:`get_driver_information` instead.
+
+    Returns
+    -------
+    version : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_GETKERNELVERSION)
   
   def get_kernel_version_information(self):
+    """
+    Reads :obj:`SPC_GETKERNELVERSION` and displays in :obj:`str` format.
+
+    Returns
+    -------
+    version : :obj:`str`
+      Version of driver
+    """
     kernel_version = self.get_kernel_version()
     return f"{kernel_version >> 24}.{(kernel_version >> 16) & 0xFF} build {(kernel_version) & 0xFFFF}"
   
   # Modifications ---------------------------------------------------------------
   def get_modifications(self):
+    """
+    Reads :obj:`SPCM_CUSTOMMOD`.
+    For decoded information, use :obj:`get_modifications_information` instead.
+
+    Returns
+    -------
+    modifications : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPCM_CUSTOMMOD)
 
   def get_modifications_information(self):
+    """
+    Reads :obj:`SPCM_CUSTOMMOD` and displays in :obj:`dict` format.
+
+    Returns
+    -------
+    modifications : :obj:`dict`
+      Contains three entries for modifications for different parts of the card: :obj:`"Card"`, :obj:`"Front-end"`, and :obj:`"Star-hub"`.
+    """
     modifications = self.get_modifications()
     return {
       "Card":(modifications & 0xFF),
@@ -1026,15 +1152,50 @@ class Card:
 
   # Features and functions ------------------------------------------------------
   def get_features(self):
+    """
+    Reads :obj:`SPC_PCIFEATURES`.
+    For decoded information, use :obj:`get_features_information` instead.
+
+    Returns
+    -------
+    features : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_PCIFEATURES)
   
   def get_extended_features(self):
+    """
+    Reads :obj:`SPC_PCIEXTFEATURES`.
+    For decoded information, use :obj:`get_features_information` instead.
+
+    Returns
+    -------
+    features : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_PCIEXTFEATURES)
   
   def get_readout_features(self):
+    """
+    Reads :obj:`SPC_READAOFEATURES`.
+    For decoded information, use :obj:`get_features_information` instead.
+
+    Returns
+    -------
+    features : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_READAOFEATURES)
   
   def get_features_information(self):
+    """
+    Reads :obj:`SPC_PCIFEATURES`, :obj:`SPC_PCIEXTFEATURES`, :obj:`SPC_READAOFEATURES`, and :obj:`SPC_SEQMODE_AVAILFEATURES` and displays each feature of the card in a list.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each available feature written as a :obj:`str`.
+    """
     bitmap = self.get_features()
     features = []
     if bitmap & spcm.SPCM_FEAT_MULTI:
@@ -1133,9 +1294,26 @@ class Card:
     return features
   
   def get_functions(self):
+    """
+    Reads :obj:`SPC_FNCTYPE`.
+    For decoded information, use :obj:`get_functions_information` instead.
+
+    Returns
+    -------
+    features : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_FNCTYPE)
   
   def get_functions_information(self):
+    """
+    Reads :obj:`SPC_FNCTYP` and displays each function of the card in a list.
+
+    Returns
+    -------
+    functions : :obj:`list` of :obj:`str`
+      A list of each available function written as a :obj:`str`.
+    """
     bitmap = self.get_functions()
     functions = []
     if bitmap & spcm.SPCM_TYPE_AI:
@@ -1152,36 +1330,86 @@ class Card:
   
   # Card mode -------------------------------------------------------------------
   def set_mode(self, mode):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card.
+    To do this without using bit codes, use :obj:`set_mode_single`, :obj:`set_mode_multi`, :obj:`set_mode_gate`, :obj:`set_mode_single_restart`, :obj:`set_mode_sequence`, :obj:`set_mode_fifo_single`, :obj:`set_mode_fifo_multi`, or :obj:`set_mode_fifo_gate` instead.
+
+    Parameters
+    ----------
+    features : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_CARDMODE, mode)
 
   def set_mode_single(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_SINGLE`.
+    """
     self.set_mode(spcm.SPC_REP_STD_SINGLE)
   
   def set_mode_multi(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_MULTI`.
+    """
     self.set_mode(spcm.SPC_REP_STD_MULTI)
 
   def set_mode_gate(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_GATE`.
+    """
     self.set_mode(spcm.SPC_REP_STD_GATE)
 
   def set_mode_single_restart(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_SINGLERESTART`.
+    """
     self.set_mode(spcm.SPC_REP_STD_SINGLERESTART)
 
   def set_mode_sequence(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_SEQUENCE`.
+    """
     self.set_mode(spcm.SPC_REP_STD_SEQUENCE)
 
   def set_mode_fifo_single(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_FIFO_SINGLE`.
+    """
     self.set_mode(spcm.SPC_REP_FIFO_SINGLE)
   
   def set_mode_fifo_multi(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_FIFO_MULTI`.
+    """
     self.set_mode(spcm.SPC_REP_FIFO_MULTI)
 
   def set_mode_fifo_gate(self):
+    """
+    Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_FIFO_GATE`.
+    """
     self.set_mode(spcm.SPC_REP_FIFO_GATE)
 
   def get_mode(self):
+    """
+    Reads :obj:`SPC_CARDMODE` to find the current mode that the card is in.
+    For decoded information, use :obj:`get_mode_information` instead.
+
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_CARDMODE)
   
   def get_mode_information(self):
+    """
+    Reads :obj:`SPC_CARDMODE` and displays the current card mode as a :obj:`str`.
+
+    Returns
+    -------
+    mode : :obj:`str`
+      The mode the card is in as a :obj:`str`.
+    """
     mode = self.get_mode()
     if mode & spcm.SPC_REP_STD_SINGLE:
       return "Single"
@@ -1201,9 +1429,26 @@ class Card:
       return "FIFO gate"
     
   def get_available_modes(self):
+    """
+    Reads :obj:`SPC_AVAILCARDMODES`.
+    For decoded information, use :obj:`get_available_modes_information` instead.
+
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_AVAILCARDMODES)
   
   def get_available_modes_information(self):
+    """
+    Reads :obj:`SPC_AVAILCARDMODES` and displays each available mode for the card in a list.
+
+    Returns
+    -------
+    modes : :obj:`list` of :obj:`str`
+      A list of each available mode written as a :obj:`str`.
+    """
     mode = self.get_available_modes()
     modes = []
     if mode & spcm.SPC_REP_STD_SINGLE:
@@ -1970,6 +2215,15 @@ class Card:
     return self._get_int64(spcm.SPC_SEQMODE_AVAILMAXLOOP)
   
   def get_available_sequence_features(self):
+    """
+    Reads :obj:`SPC_SEQMODE_AVAILFEATURES`.
+    For decoded information, use :obj:`get_features_information` or :obj:`get_available_sequence_features_information` instead.
+
+    Returns
+    -------
+    features : :obj:`int`
+      Bit code.
+    """
     return self._get_int64(spcm.SPC_SEQMODE_AVAILFEATURES)
   
   def get_available_sequence_features_information(self):
