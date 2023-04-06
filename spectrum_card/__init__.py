@@ -218,6 +218,38 @@ Translation from DLL commands
     - :obj:`SPC_MIINST_BITSPERSAMPLE`
     - :obj:`Card.get_sample_resolution_bits`
 
+
+.. list-table:: Clock
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_CLOCKOUT`
+    - :obj:`Card.clock_output_enable`, :obj:`Card.clock_output_disable`
+  * - Read
+    - :obj:`SPC_CLOCKOUT`
+    - :obj:`Card.get_clock_output`
+  * - Read
+    - :obj:`SPC_CLOCKOUTFREQUENCY`
+    - :obj:`Card.get_clock_output_frequency`
+  * - Write
+    - :obj:`SPC_REFERENCECLOCK`
+    - :obj:`Card.set_external_reference_frequency`
+  * - Read
+    - :obj:`SPC_REFERENCECLOCK`
+    - :obj:`Card.get_external_reference_frequency`
+  * - Read
+    - :obj:`SPC_AVAILCLOCKMODES`
+    - :obj:`Card.get_available_clock_modes_information`
+  * - Write
+    - :obj:`SPC_CLOCKMODE`
+    - :obj:`Card.use_clock_primary_internal`, :obj:`Card.use_clock_secondary_internal`, :obj:`Card.use_clock_external_reference`, :obj:`Card.use_clock_pxie_reference`
+  * - Read
+    - :obj:`SPC_CLOCKMODE`
+    - :obj:`Card.get_clock_mode_information`
+
 """
 
 from spectrum_card.spectrum_header import pyspcm as spcm
@@ -1519,7 +1551,7 @@ class Card:
     Returns
     -------
     sample_rate : :obj:`int`
-      The current sample rate in S/s.
+      The current sample rate in Sa/s.
     """
     return self._get_int64(spcm.SPC_SAMPLERATE)
 
@@ -1530,7 +1562,7 @@ class Card:
     Returns
     -------
     sample_rate : :obj:`int`
-      The card's maximum sample rate in S/s.
+      The card's maximum sample rate in Sa/s.
     """
     return self._get_int64(spcm.SPC_PCISAMPLERATE)
   
@@ -1540,7 +1572,7 @@ class Card:
 
     Returns
     -------
-    sample_rate : :obj:`int`
+    resolution : :obj:`int`
       The resolution of each sample in Bytes/sample.
     """
     return self._get_int32(spcm.SPC_MIINST_BYTESPERSAMPLE)
@@ -1551,28 +1583,69 @@ class Card:
 
     Returns
     -------
-    sample_rate : :obj:`int`
+    resolution : :obj:`int`
       The resolution of each sample in bits/sample.
     """
     return self._get_int32(spcm.SPC_MIINST_BITSPERSAMPLE)
 
   # Clock --------------------------------------------------------------------
   def set_clock_output(self, enable):
+    """
+    Writes to :obj:`SPC_CLOCKOUT`.
+    You may instead want to use :obj:`clock_output_enable` and :obj:`clock_output_disable`.
+
+    Parameters
+    ----------
+    enable : :obj:`int`
+      :obj:`1` if output is enabled, :obj:`0` otherwise.
+    """
     self._set_int32(spcm.SPC_CLOCKOUT, enable)
 
   def clock_output_enable(self):
+    """
+    Writes to :obj:`SPC_CLOCKOUT` to enable the clock output.
+    """
     self.set_clock_output(1)
   
   def clock_output_disable(self):
+    """
+    Writes to :obj:`SPC_CLOCKOUT` to disable the clock output.
+    """
     self.set_clock_output(0)
 
   def get_clock_output(self):
+    """
+    Reads :obj:`SPC_CLOCKOUT`.
+
+    Returns
+    -------
+    enabled : :obj:`int`
+      :obj:`1` if output is enabled, :obj:`0` otherwise.
+    """
     return self._get_int32(spcm.SPC_CLOCKOUT)
   
   def get_clock_output_frequency(self):
+    """
+    Reads :obj:`SPC_CLOCKOUTFREQUENCY`.
+
+    Returns
+    -------
+    frequency : :obj:`int`
+      Output frequency in Hz.
+    """
     return self._get_int32(spcm.SPC_CLOCKOUTFREQUENCY)
   
   def set_external_reference_frequency(self, frequency, multiplier = ""):
+    """
+    Writes to :obj:`SPC_REFERENCECLOCK`.
+
+    Parameters
+    ----------
+    frequency : :obj:`int`
+      Reference frequency in Hz.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), :obj:`"k"`, obj:`"M"` or obj:`"G"`, which multiply the reference frequency by 1, 1 000, 1 000 000 or 1 000 000 000 respectively.
+    """
     if multiplier == "k":
       frequency *= 1e3
     elif multiplier == "M":
@@ -1582,12 +1655,37 @@ class Card:
     self._set_int64(spcm.SPC_REFERENCECLOCK, int(frequency))
 
   def get_external_reference_frequency(self):
+    """
+    Reads :obj:`SPC_REFERENCECLOCK`.
+
+    Returns
+    -------
+    frequency : :obj:`int`
+      Reference frequency in Hz.
+    """
     return self._get_int32(spcm.SPC_REFERENCECLOCK)
   
   def get_available_clock_modes(self):
+    """
+    Reads :obj:`SPC_AVAILCLOCKMODES`.
+    For decoded information, use :obj:`get_available_clock_modes_information` instead.
+
+    Returns
+    -------
+    modes : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_AVAILCLOCKMODES)
   
   def get_available_clock_modes_information(self):
+    """
+    Reads :obj:`SPC_AVAILCLOCKMODES` and displays each available mode for the clock in a list.
+
+    Returns
+    -------
+    modes : :obj:`list` of :obj:`str`
+      A list of each available mode written as a :obj:`str`.
+    """
     bitmap = self.get_available_clock_modes()
     clock_modes = []
     if bitmap & spcm.SPC_CM_INTPLL:
@@ -1601,24 +1699,62 @@ class Card:
     return clock_modes
 
   def set_clock_mode(self, clock_mode):
+    """
+    Writes to :obj:`SPC_CLOCKMODE`.
+    To do this without using bit codes, use :obj:`use_clock_primary_internal`, :obj:`use_clock_secondary_internal`, :obj:`use_clock_external_reference`, or :obj:`use_clock_pxie_reference` instead.
+
+    Parameters
+    ----------
+    mode : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_CLOCKMODE, clock_mode)
 
   def use_clock_primary_internal(self):
+    """
+    Writes :obj:`SPC_CM_INTPLL` to :obj:`SPC_CLOCKMODE`.
+    """
     self.set_clock_mode(spcm.SPC_CM_INTPLL)
 
   def use_clock_secondary_internal(self):
+    """
+    Writes :obj:`SPC_CM_QUARTZ2` to :obj:`SPC_CLOCKMODE`.
+    """
     self.set_clock_mode(spcm.SPC_CM_QUARTZ2)
 
   def use_clock_external_reference(self):
+    """
+    Writes :obj:`SPC_CM_EXTREFCLOCK` to :obj:`SPC_CLOCKMODE`.
+    """
     self.set_clock_mode(spcm.SPC_CM_EXTREFCLOCK)
 
   def use_clock_pxie_reference(self):
+    """
+    Writes :obj:`SPC_CM_PXIREFCLOCK` to :obj:`SPC_CLOCKMODE`.
+    """
     self.set_clock_mode(spcm.SPC_CM_PXIREFCLOCK)
 
   def get_clock_mode(self):
+    """
+    Reads :obj:`SPC_CLOCKMODE`.
+    For decoded information, use :obj:`get_clock_mode_information` instead.
+
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_CLOCKMODE)
 
   def get_clock_mode_information(self):
+    """
+    Reads :obj:`SPC_CLOCKMODE` and displays the current clock mode as a string.
+
+    Returns
+    -------
+    mode : :obj:`str`
+      The current clock mode written as a :obj:`str`.
+    """
     bitmap = self.get_clock_mode()
     if bitmap == spcm.SPC_CM_INTPLL:
       return "Primary internal quartz"
