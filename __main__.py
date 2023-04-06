@@ -133,13 +133,9 @@ if __name__ == "__main__":
 
     card.set_memory_size(card.get_number_of_segments()*signal_sine.size)
 
-    card.set_segment_length(0, signal_length)
     card.array_to_device([signal_sine, signal_square, signal_bipolar, signal_rectified], 0)
-    card.set_segment_length(1, signal_length)
     card.array_to_device([signal_rectified, signal_sine, signal_square, signal_bipolar], 1)
-    card.set_segment_length(2, signal_length)
     card.array_to_device([signal_bipolar, signal_rectified, signal_sine, signal_square], 2)
-    card.set_segment_length(3, signal_length)
     card.array_to_device([signal_square, signal_bipolar, signal_rectified, signal_sine], 3)
 
     number_of_loops = 100000

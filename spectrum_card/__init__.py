@@ -187,13 +187,36 @@ Translation from DLL commands
     - Equivalent method
   * - Write
     - :obj:`SPC_CARDMODE`
-    - :obj:`set_mode_single`, :obj:`set_mode_multi`, :obj:`set_mode_gate`, :obj:`set_mode_single_restart`, :obj:`set_mode_sequence`, :obj:`set_mode_fifo_single`, :obj:`set_mode_fifo_multi`, :obj:`set_mode_fifo_gate`
+    - :obj:`Card.set_mode_single`, :obj:`Card.set_mode_multi`, :obj:`Card.set_mode_gate`, :obj:`Card.set_mode_single_restart`, :obj:`Card.set_mode_sequence`, :obj:`Card.set_mode_fifo_single`, :obj:`Card.set_mode_fifo_multi`, :obj:`Card.set_mode_fifo_gate`
   * - Read
     - :obj:`SPC_CARDMODE`
     - :obj:`Card.get_mode_information`
   * - Read
     - :obj:`SPC_AVAILCARDMODES`
     - :obj:`Card.get_available_modes_information`
+
+
+.. list-table:: Sample rate
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_SAMPLERATE`
+    - :obj:`Card.set_sample_rate`
+  * - Read
+    - :obj:`SPC_SAMPLERATE`
+    - :obj:`Card.get_sample_rate`
+  * - Read
+    - :obj:`SPC_PCISAMPLERATE`
+    - :obj:`Card.get_max_sample_rate`
+  * - Read
+    - :obj:`SPC_MIINST_BYTESPERSAMPLE`
+    - :obj:`Card.get_sample_resolution`
+  * - Read
+    - :obj:`SPC_MIINST_BITSPERSAMPLE`
+    - :obj:`Card.get_sample_resolution_bits`
 
 """
 
@@ -1471,6 +1494,16 @@ class Card:
 
   # Sample rate -----------------------------------------------------------------
   def set_sample_rate(self, sample_rate, multiplier = ""):
+    """
+    Writes a sample rate to :obj:`SPC_SAMPLERATE`.
+
+    Parameters
+    ----------
+    sample_rate : :obj:`int`
+      The sample rate in S/s.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), :obj:`"k"`, obj:`"M"` or obj:`"G"`, which multiply the sample rate by 1, 1 000, 1 000 000 or 1 000 000 000 respectively.
+    """
     if multiplier == "k":
       sample_rate *= 1e3
     elif multiplier == "M":
@@ -1479,16 +1512,48 @@ class Card:
       sample_rate *= 1e9
     self._set_int64(spcm.SPC_SAMPLERATE, int(sample_rate))
 
+  def get_sample_rate(self):
+    """
+    Reads :obj:`SPC_SAMPLERATE`.
+
+    Returns
+    -------
+    sample_rate : :obj:`int`
+      The current sample rate in S/s.
+    """
+    return self._get_int64(spcm.SPC_SAMPLERATE)
+
   def get_max_sample_rate(self):
+    """
+    Reads :obj:`SPC_PCISAMPLERATE`.
+
+    Returns
+    -------
+    sample_rate : :obj:`int`
+      The card's maximum sample rate in S/s.
+    """
     return self._get_int64(spcm.SPC_PCISAMPLERATE)
   
-  def get_sample_rate(self):
-    return self._get_int64(spcm.SPC_SAMPLERATE)
-  
   def get_sample_resolution(self):
+    """
+    Reads :obj:`SPC_MIINST_BYTESPERSAMPLE`.
+
+    Returns
+    -------
+    sample_rate : :obj:`int`
+      The resolution of each sample in Bytes/sample.
+    """
     return self._get_int32(spcm.SPC_MIINST_BYTESPERSAMPLE)
   
   def get_sample_resolution_bits(self):
+    """
+    Reads :obj:`SPC_MIINST_BITSPERSAMPLE`.
+
+    Returns
+    -------
+    sample_rate : :obj:`int`
+      The resolution of each sample in bits/sample.
+    """
     return self._get_int32(spcm.SPC_MIINST_BITSPERSAMPLE)
 
   # Clock --------------------------------------------------------------------
@@ -2162,6 +2227,7 @@ class Card:
   # DMA and memory --------------------------------------------------------------
   def array_to_device(self, data, segment = 0):
     if self.get_mode_information() == "Sequence":
+      self.set_segment_length(segment, data[0].size)
       previous_segment = self.get_current_segment()
       self.set_current_segment(segment)
 
