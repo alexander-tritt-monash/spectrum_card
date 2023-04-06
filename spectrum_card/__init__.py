@@ -250,6 +250,50 @@ Translation from DLL commands
     - :obj:`SPC_CLOCKMODE`
     - :obj:`Card.get_clock_mode_information`
 
+
+.. list-table:: Trigger masks
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_TRIG_ORMASK`
+    - :obj:`Card.set_sufficient_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_ORMASK`
+    - :obj:`Card.get_sufficient_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_AVAILORMASK`
+    - :obj:`Card.get_available_sufficient_triggers`
+  * - Write
+    - :obj:`SPC_TRIG_CH_ORMASK0`
+    - :obj:`Card.set_channels_for_sufficient_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_CH_ORMASK0`
+    - :obj:`Card.get_channels_for_sufficient_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_CH_AVAILORMASK0`
+    - :obj:`Card.get_available_channels_for_sufficient_triggers`
+  * - Write
+    - :obj:`SPC_TRIG_ANDMASK`
+    - :obj:`Card.set_necessary_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_ANDMASK`
+    - :obj:`Card.get_necessary_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_AVAILANDMASK`
+    - :obj:`Card.get_available_necessary_triggers`
+  * - Write
+    - :obj:`SPC_TRIG_CH_ANDMASK0`
+    - :obj:`Card.set_channels_for_necessary_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_CH_ANDMASK0`
+    - :obj:`Card.get_channels_for_necessary_triggers`
+  * - Read
+    - :obj:`SPC_TRIG_CH_AVAILANDMASK0`
+    - :obj:`Card.get_available_channels_for_necessary_triggers`
+
 """
 
 from spectrum_card.spectrum_header import pyspcm as spcm
@@ -281,6 +325,8 @@ class Card:
     self.is_alive = False
   
   # Error handling --------------------------------------------------------------
+  # =============================================================================
+  
   def _handle_error(self, error_message):
     if not error_message:
       return
@@ -372,6 +418,8 @@ class Card:
     raise Exception(f"Spectrum Instruments device error {error_message}:\n{'Remote' if is_remote else 'Local'} device error.\n{error_message_short}")
 
   # DLL -------------------------------------------------------------------------
+  # =============================================================================
+  
   def _get_int32(self, address):
     if not self.is_alive:
       raise Exception("Hardware not defined.")
@@ -400,6 +448,8 @@ class Card:
     self._handle_error(spcm.spcm_dwDefTransfer_i64(self.card_handle, buffer_type, direction, notify_size, host_address, device_address, data_size))
 
   # Identity --------------------------------------------------------------------
+  # =============================================================================
+  
   def get_card_type(self):
     """
     Reads raw data from :obj:`SPC_PCITYP`.
@@ -580,6 +630,8 @@ class Card:
 
   
   # Card information ------------------------------------------------------------
+  # =============================================================================
+  
   def get_number_of_front_end_modules(self):
     """
     Reads :obj:`SPC_MIINST_MODULES`.
@@ -655,6 +707,8 @@ class Card:
     return self._get_int32(spcm.SPC_MIINST_MAXEXTREFCLOCK)
   
   # Temperature -----------------------------------------------------------------
+  # =============================================================================
+  
   def get_temperature_base(self, unit = "C"):
     """
     Reads :obj:`SPC_MON_TK_BASE_CTRL`, :obj:`SPC_MON_TC_BASE_CTRL` or :obj:`SPC_MON_TF_BASE_CTRL`.
@@ -722,6 +776,8 @@ class Card:
     return self._get_int32(spcm.SPC_MON_TK_MODULE_1 + (spcm.SPC_MON_TC_BASE_CTRL - spcm.SPC_MON_TK_BASE_CTRL)*unit_offset)
 
   # Hardware and PCB version ----------------------------------------------------
+  # =============================================================================
+  
   def get_pci_version(self):
     """
     Reads :obj:`SPC_PCIVERSION`.
@@ -878,6 +934,8 @@ class Card:
     return self._get_int32(spcm.SPC_PXIHWSLOTNO)
   
   # Firmware information --------------------------------------------------------
+  # =============================================================================
+  
   def get_firmware_version_control(self):
     """
     Reads :obj:`SPCM_FW_CTRL`.
@@ -1095,6 +1153,8 @@ class Card:
     return {"Firmware type":(bitmap >> 16), "Firmware version":bitmap & 0xFFFF}
 
   # Driver information ----------------------------------------------------------
+  # =============================================================================
+  
   def get_driver(self):
     """
     Reads :obj:`SPC_GETDRVTYPE`.
@@ -1177,6 +1237,8 @@ class Card:
     return f"{kernel_version >> 24}.{(kernel_version >> 16) & 0xFF} build {(kernel_version) & 0xFFFF}"
   
   # Modifications ---------------------------------------------------------------
+  # =============================================================================
+  
   def get_modifications(self):
     """
     Reads :obj:`SPCM_CUSTOMMOD`.
@@ -1206,6 +1268,8 @@ class Card:
     }
 
   # Features and functions ------------------------------------------------------
+  # =============================================================================
+  
   def get_features(self):
     """
     Reads :obj:`SPC_PCIFEATURES`.
@@ -1384,6 +1448,8 @@ class Card:
     return functions
   
   # Card mode -------------------------------------------------------------------
+  # =============================================================================
+  
   def set_mode(self, mode):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card.
@@ -1525,6 +1591,8 @@ class Card:
     return modes
 
   # Sample rate -----------------------------------------------------------------
+  # =============================================================================
+  
   def set_sample_rate(self, sample_rate, multiplier = ""):
     """
     Writes a sample rate to :obj:`SPC_SAMPLERATE`.
@@ -1588,7 +1656,9 @@ class Card:
     """
     return self._get_int32(spcm.SPC_MIINST_BITSPERSAMPLE)
 
-  # Clock --------------------------------------------------------------------
+  # Clock -----------------------------------------------------------------------
+  # =============================================================================
+  
   def set_clock_output(self, enable):
     """
     Writes to :obj:`SPC_CLOCKOUT`.
@@ -1765,8 +1835,19 @@ class Card:
     if bitmap == spcm.SPC_CM_PXIREFCLOCK:
       return "PXIe backplane clock reference"
 
-  # Triggers --------------------------------------------------------------------
+  # Trigger masks ---------------------------------------------------------------
+  # =============================================================================
+
   def set_trigger_or_mask(self, mask):
+    """
+    Writes to :obj:`SPC_TRIG_ORMASK`.
+    To do this without using bit codes, use :obj:`set_sufficient_triggers`.
+
+    Parameters
+    ----------
+    mask : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_TRIG_ORMASK, mask)
 
   def set_sufficient_triggers(
@@ -1785,6 +1866,10 @@ class Card:
       pxi_star = False,
       pxid_star_b = False
     ):
+    """
+    Writes to :obj:`SPC_TRIG_ORMASK`.
+    Set each parameter to :obj:`True` to add it to the OR mask.
+    """
     mask = 0
     if software:
       mask |= spcm.SPC_TMASK_SOFTWARE
@@ -1815,9 +1900,26 @@ class Card:
     self.set_trigger_or_mask(mask)
 
   def get_trigger_or_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_ORMASK`.
+    For decoded information, use :obj:`get_sufficient_triggers` instead.
+
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_ORMASK)
   
   def get_sufficient_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_ORMASK` and displays each sufficient trigger in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each sufficient trigger written as a :obj:`str`.
+    """
     mask = self.get_trigger_or_mask()
     triggers = []
     if mask & spcm.SPC_TMASK_SOFTWARE:
@@ -1849,9 +1951,26 @@ class Card:
     return triggers
   
   def get_available_triggers_for_or_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_AVAILORMASK`.
+    For decoded information, use :obj:`get_available_sufficient_triggers` instead.
+
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_AVAILORMASK)
 
   def get_available_sufficient_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_AVAILORMASK` and displays each available sufficient trigger in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each available sufficient trigger written as a :obj:`str`.
+    """
     mask = self.get_available_triggers_for_or_mask()
     triggers = []
     if mask & spcm.SPC_TMASK_SOFTWARE:
@@ -1883,6 +2002,15 @@ class Card:
     return triggers
   
   def set_channels_triggered_by_or_mask(self, mask):
+    """
+    Writes to :obj:`SPC_TRIG_CH_ORMASK0`.
+    To do this without using bit codes, use :obj:`set_channels_for_sufficient_triggers`.
+
+    Parameters
+    ----------
+    channels : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_TRIG_CH_ORMASK0, mask)
 
   def set_channels_for_sufficient_triggers(
@@ -1896,6 +2024,10 @@ class Card:
       channel_6 = False,
       channel_7 = False
     ):
+    """
+    Writes to :obj:`SPC_TRIG_CH_ORMASK0`.
+    Set each parameter to :obj:`True` to add the channel to those effected by the OR mask.
+    """
     mask = 0
     if channel_0:
       mask |= spcm.SPC_TMASK0_CH0
@@ -1916,9 +2048,26 @@ class Card:
     self.set_channels_triggered_by_or_mask(mask)
 
   def get_channels_triggered_by_or_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_ORMASK0`.
+    For decoded information, use :obj:`get_channels_for_sufficient_triggers` instead.
+
+    Returns
+    -------
+    channels : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_CH_ORMASK0)
   
   def get_channels_for_sufficient_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_ORMASK0` and displays each channel in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each channel written as a :obj:`str`.
+    """
     mask = self.get_channels_triggered_by_or_mask()
     channels = []
     if mask & spcm.SPC_TMASK0_CH0:
@@ -1940,9 +2089,26 @@ class Card:
     return channels
   
   def get_available_channels_triggered_by_or_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_AVAILORMASK0`.
+    For decoded information, use :obj:`get_available_channels_for_sufficient_triggers` instead.
+
+    Returns
+    -------
+    channels : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_CH_AVAILORMASK0)
   
   def get_available_channels_for_sufficient_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_AVAILORMASK0` and displays each channel in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each channel written as a :obj:`str`.
+    """
     mask = self.get_available_channels_triggered_by_or_mask()
     channels = []
     if mask & spcm.SPC_TMASK0_CH0:
@@ -1964,6 +2130,15 @@ class Card:
     return channels
   
   def set_trigger_and_mask(self, mask):
+    """
+    Writes to :obj:`SPC_TRIG_ANDMASK`.
+    To do this without using bit codes, use :obj:`set_necessary_triggers`.
+
+    Parameters
+    ----------
+    mask : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_TRIG_ANDMASK, mask)
 
   def set_necessary_triggers(
@@ -1981,6 +2156,10 @@ class Card:
       pxi_star = False,
       pxid_star_b = False
     ):
+    """
+    Writes to :obj:`SPC_TRIG_ANDMASK`.
+    Set each parameter to :obj:`True` to add it to the AND mask.
+    """
     mask = 0
     if external_0:
       mask |= spcm.SPC_TMASK_EXT0
@@ -2009,9 +2188,26 @@ class Card:
     self.set_trigger_and_mask(mask)
 
   def get_trigger_and_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_ANDMASK`.
+    For decoded information, use :obj:`get_necessary_triggers` instead.
+
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_ANDMASK)
   
   def get_necessary_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_ANDMASK` and displays each necessary trigger in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each necessary trigger written as a :obj:`str`.
+    """
     mask = self.get_trigger_and_mask()
     triggers = []
     if mask & spcm.SPC_TMASK_EXT0:
@@ -2041,9 +2237,26 @@ class Card:
     return triggers
   
   def get_available_triggers_for_and_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_AVAILANDMASK`.
+    For decoded information, use :obj:`get_available_necessary_triggers` instead.
+
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_AVAILANDMASK)
   
   def get_available_necessary_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_AVAILANDMASK` and displays each available necessary trigger in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each available necessary trigger written as a :obj:`str`.
+    """
     mask = self.get_available_triggers_for_and_mask()
     triggers = []
     if mask & spcm.SPC_TMASK_EXT0:
@@ -2073,6 +2286,15 @@ class Card:
     return triggers
   
   def set_channels_triggered_by_and_mask(self, mask):
+    """
+    Writes to :obj:`SPC_TRIG_CH_ANDMASK0`.
+    To do this without using bit codes, use :obj:`set_channels_for_necessary_triggers`.
+
+    Parameters
+    ----------
+    channels : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_TRIG_CH_ANDMASK0, mask)
 
   def set_channels_for_necessary_triggers(
@@ -2086,6 +2308,10 @@ class Card:
       channel_6 = False,
       channel_7 = False
     ):
+    """
+    Writes to :obj:`SPC_TRIG_CH_ANDMASK0`.
+    Set each parameter to :obj:`True` to add the channel to those effected by the AND mask.
+    """
     mask = 0
     if channel_0:
       mask |= spcm.SPC_TMASK0_CH0
@@ -2106,9 +2332,26 @@ class Card:
     self.set_channels_triggered_by_and_mask(mask)
 
   def get_channels_triggered_by_and_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_ANDMASK0`.
+    For decoded information, use :obj:`get_channels_for_necessary_triggers` instead.
+
+    Returns
+    -------
+    channels : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_CH_ANDMASK0)
   
   def get_channels_for_necessary_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_ANDMASK0` and displays each channel in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each channel written as a :obj:`str`.
+    """
     mask = self.get_channels_triggered_by_and_mask()
     channels = []
     if mask & spcm.SPC_TMASK0_CH0:
@@ -2130,9 +2373,26 @@ class Card:
     return channels
   
   def get_available_channels_triggered_by_and_mask(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_AVAILANDMASK0`.
+    For decoded information, use :obj:`get_available_channels_for_necessary_triggers` instead.
+
+    Returns
+    -------
+    channels : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_TRIG_CH_AVAILANDMASK0)
   
   def get_available_channels_for_necessary_triggers(self):
+    """
+    Reads :obj:`SPC_TRIG_CH_AVAILANDMASK0` and displays each channel in a :obj:`list` of :obj:`str`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      A list of each channel written as a :obj:`str`.
+    """
     mask = self.get_available_channels_triggered_by_and_mask()
     channels = []
     if mask & spcm.SPC_TMASK0_CH0:
@@ -2154,6 +2414,8 @@ class Card:
     return channels
   
   # Channels --------------------------------------------------------------------
+  # =============================================================================
+  
   def set_channel_enable(self, message):
     self._set_int64(spcm.SPC_CHENABLE, message)
 
@@ -2297,6 +2559,8 @@ class Card:
       return self.get_stop_level_custom(channel_index)/limit
   
   # Commands --------------------------------------------------------------------
+  # =============================================================================
+  
   def execute_command(self, command):
     self._set_int32(spcm.SPC_M2CMD, command)
 
@@ -2361,6 +2625,8 @@ class Card:
     return self._get_int32(spcm.SPC_TIMEOUT)
 
   # DMA and memory --------------------------------------------------------------
+  # =============================================================================
+  
   def array_to_device(self, data, segment = 0):
     if self.get_mode_information() == "Sequence":
       self.set_segment_length(segment, data[0].size)
@@ -2407,6 +2673,8 @@ class Card:
     return self._get_int64(spcm.SPC_MEMTEST)
 
   # Sequencing ------------------------------------------------------------------
+  # =============================================================================
+  
   def get_max_number_of_segments(self):
     return self._get_int64(spcm.SPC_SEQMODE_AVAILMAXSEGMENT)
   
@@ -2517,6 +2785,8 @@ class Card:
     return self._get_int32(spcm.SPC_LOOPS)
 
   # Status ----------------------------------------------------------------------
+  # =============================================================================
+  
   def get_status(self):
     return self._get_int32(spcm.SPC_M2STATUS)
   
@@ -2543,5 +2813,3 @@ class Card:
       status.append("DMA: Error")
 
     return status
-
-# Main ==========================================================================
