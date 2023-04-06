@@ -3,7 +3,15 @@ from spectrum_card.spectrum_header import spcm_tools
 
 import numpy as np
 
-class BabyCard:
+class Card:
+  """
+  Opens the connection to the card using :obj:`spcm_hOpen`.
+
+  Parameters
+  ----------
+  device_address : :obj:`str`
+    Directory to the card.
+  """
   def __init__(self, device_address = b"/dev/spcm0"):
     self.is_alive = False
     self.card_handle = spcm.spcm_hOpen(spcm.create_string_buffer(device_address))
@@ -12,6 +20,9 @@ class BabyCard:
     self.is_alive = True
     
   def close(self):
+    """
+    Closes the connection to the card.
+    """
     spcm.spcm_vClose(self.card_handle)
     self.is_alive = False
   
@@ -136,16 +147,50 @@ class BabyCard:
 
   # Identity --------------------------------------------------------------------
   def get_card_type(self):
+    """
+    Reads raw data from :obj:`SPC_PCITYP`.
+    For decoded information, use :obj:`get_name` and :obj:`get_series_information` instead.
+
+    Returns
+    -------
+    bit_type : :obj:`int`
+      Bit code for card type.
+    """
     return self._get_int32(spcm.SPC_PCITYP)
   
   def get_name(self):
+    """
+    Reads :obj:`SPC_PCITYP` to find the name of the card.
+
+    Returns
+    -------
+    name : :obj:`str`
+      Name of the card.
+    """
     return spcm_tools.szTypeToName(self.get_card_type())
   
   def get_series(self):
+    """
+    Reads raw data from :obj:`SPC_PCITYP`.
+    For decoded information, use :obj:`get_series_information` instead.
+
+    Returns
+    -------
+    bit_series : :obj:`int`
+      Bit code for card series.
+    """
     response = self._get_int32(spcm.SPC_PCITYP)
     return response & spcm.TYP_SERIESMASK
   
   def get_series_information(self):
+    """
+    Reads :obj:`SPC_PCITYP` to find the series of the card.
+
+    Returns
+    -------
+    Series : :obj:`str`
+      Series of the card.
+    """
     series = self.get_series()
     if series == spcm.TYP_MISERIES:
       return "MI"
@@ -171,35 +216,112 @@ class BabyCard:
       return "M4i Express"
   
   def get_serial_number(self):
+    """
+    Reads :obj:`SPC_PCISERIALNO` to find the series of the card.
+
+    Returns
+    -------
+    serial_number : :obj:`int`
+      Serial number of the card.
+    """
     return self._get_int32(spcm.SPC_PCISERIALNO)
   
   def get_production_date(self):
+    """
+    Reads raw data from :obj:`SPC_PCIDATE`.
+    For decoded information, use :obj:`get_production_date_information` instead.
+
+    Returns
+    -------
+    bit_date : :obj:`int`
+      Bit code for production date.
+    """
     return self._get_int32(spcm.SPC_PCIDATE)
   
   def get_production_date_information(self):
+    """
+    Reads :obj:`SPC_PCIDATE` to find the production date of the card.
+
+    Returns
+    -------
+    date : :obj:`dict`
+      Contains two entries:
+      :obj:`"Year"` is an :obj:`int` which contains the year the card was produced.
+      :obj:`"Week"` is an :obj:`int` which contains the week of the year the card was produced.
+    """
     bitmap = self.get_production_date()
     return {"Week":(bitmap>>16), "Year":(bitmap & 0xFFFF)}
   
   def get_calibration_date(self):
+    """
+    Reads raw data from :obj:`SPC_CALIBDATE`.
+    For decoded information, use :obj:`get_calibration_date_information` instead.
+
+    Returns
+    -------
+    bit_date : :obj:`int`
+      Bit code for production date.
+    """
     return self._get_int32(spcm.SPC_CALIBDATE)
   
   def get_calibration_date_information(self):
+    """
+    Reads :obj:`SPC_CALIBDATE` to find the calibration date of the card.
+
+    Returns
+    -------
+    date : :obj:`dict`
+      Contains two entries:
+      :obj:`"Year"` is an :obj:`int` which contains the year the card was calibrated.
+      :obj:`"Week"` is an :obj:`int` which contains the week of the year the card was calibrated.
+    """
     bitmap = self.get_calibration_date()
     return {"Week":(bitmap>>16), "Year":(bitmap & 0xFFFF)}
   
   def get_is_demo_card(self):
+    """
+    Reads :obj:`SPC_MIINST_ISDEMOCARD` to find out if the card is a "demo" card (i.e., a software emulation).
+
+    Returns
+    -------
+    is_demo : :obj:`int`
+      :obj:`1` if the card is a demo, otherwise :obj:`0`.
+    """
     return self._get_int32(spcm.SPC_MIINST_ISDEMOCARD)
   
   def set_card_identification(self, value):
+    """
+    Writes to :obj:`SPC_CARDIDENTIFICATION` to set or unset the card's notification LED to identification mode.
+    You may want to use :obj:`identification_led_enable` and :obj:`identification_led_disable` instead.
+
+    Parameters
+    ----------
+    value : :obj:`int`
+      :obj:`1` to get the LED to flash, otherwise :obj:`0`.
+    """
     self._set_int32(spcm.SPC_CARDIDENTIFICATION, value)
 
   def identification_led_enable(self):
+    """
+    Writes to :obj:`SPC_CARDIDENTIFICATION` to set the card's notification LED to identification mode.
+    """
     self.set_card_identification(1)
 
   def identification_led_disable(self):
+    """
+    Writes to :obj:`SPC_CARDIDENTIFICATION` to set the card's notification LED to normal mode.
+    """
     self.set_card_identification(0)
 
   def get_card_identification(self):
+    """
+    Reads :obj:`SPC_CARDIDENTIFICATION` to see if the card's notification LED is in identification mode.
+
+    Returns
+    -------
+    value : :obj:`int`
+      :obj:`1` if the LED is flashing, otherwise :obj:`0`.
+    """
     return self._get_int32(spcm.SPC_CARDIDENTIFICATION)
 
   

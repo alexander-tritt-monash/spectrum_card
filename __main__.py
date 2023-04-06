@@ -14,7 +14,7 @@ if __name__ == "__main__":
   signal_bipolar = 1*(np.arange(0, signal_length) >= signal_length//4) - 1*(np.arange(0, signal_length) < 3*signal_length//4)
   signal_rectified = np.abs(np.cos((math.tau*np.arange(0, signal_length)/signal_length - math.pi/2)/2))
 
-  card = sc.BabyCard()
+  card = sc.Card()
   card.reset()
   
   print("")
