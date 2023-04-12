@@ -2,7 +2,10 @@
 Translation from DLL commands
 -----------------------------
 
-.. list-table:: Card identity
+Card identity
+.............
+
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -27,8 +30,10 @@ Translation from DLL commands
     - :obj:`SPC_CARDIDENTIFICATION`
     - :obj:`Card.get_card_identification`
 
+Card information
+................
 
-.. list-table:: Card information
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -56,8 +61,10 @@ Translation from DLL commands
     - :obj:`SPC_MIINST_MAXEXTREFCLOCK`
     - :obj:`Card.get_max_external_reference_clock`
 
+Temperature
+...........
 
-.. list-table:: Temperature
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -73,8 +80,10 @@ Translation from DLL commands
     - :obj:`SPC_MON_TK_MODULE_1`, :obj:`SPC_MON_TC_MODULE_1`, :obj:`SPC_MON_TF_MODULE_1`
     - :obj:`Card.get_temperature_module_1`
 
+Hardware and PCB version
+........................
 
-.. list-table:: Hardware and PCB version
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -102,8 +111,10 @@ Translation from DLL commands
     - :obj:`SPC_PXIHWSLOTNO`
     - :obj:`Card.get_pxi_slot_number`
 
+Firmware information
+....................
 
-.. list-table:: Firmware information
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -137,8 +148,10 @@ Translation from DLL commands
     - :obj:`SPCM_FW_POWER`
     - :obj:`Card.get_firmware_version_power_information`
 
+Driver information
+..................
 
-.. list-table:: Driver information
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -154,8 +167,10 @@ Translation from DLL commands
     - :obj:`SPC_GETKERNELVERSION`
     - :obj:`Card.get_kernel_version_information`
 
+Modifications
+.............
 
-.. list-table:: Modifications
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -165,7 +180,10 @@ Translation from DLL commands
     - :obj:`SPCM_CUSTOMMOD`
     - :obj:`Card.get_modifications_information`
 
-.. list-table:: Features and functions
+Features and functions
+......................
+
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -178,8 +196,10 @@ Translation from DLL commands
     - :obj:`SPC_FNCTYPE`
     - :obj:`Card.get_functions_information`
 
-  
-.. list-table:: Card mode
+Card mode
+.........
+
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -195,8 +215,10 @@ Translation from DLL commands
     - :obj:`SPC_AVAILCARDMODES`
     - :obj:`Card.get_available_modes_information`
 
+Sample rate
+...........
 
-.. list-table:: Sample rate
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -218,8 +240,10 @@ Translation from DLL commands
     - :obj:`SPC_MIINST_BITSPERSAMPLE`
     - :obj:`Card.get_sample_resolution_bits`
 
+Clock
+.....
 
-.. list-table:: Clock
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -250,8 +274,10 @@ Translation from DLL commands
     - :obj:`SPC_CLOCKMODE`
     - :obj:`Card.get_clock_mode_information`
 
+Trigger masks
+.............
 
-.. list-table:: Trigger masks
+.. list-table::
   :header-rows: 1
 
   * - Direction
@@ -294,6 +320,50 @@ Translation from DLL commands
     - :obj:`SPC_TRIG_CH_AVAILANDMASK0`
     - :obj:`Card.get_available_channels_for_necessary_triggers`
 
+Triggers
+........
+
+.. list-table::
+  :widths: 10 45 45
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_TRIG_DELAY`
+    - :obj:`Card.set_trigger_delay`
+  * - Read
+    - :obj:`SPC_TRIG_DELAY`
+    - :obj:`Card.get_trigger_delay`
+  * - Read
+    - :obj:`SPC_TRIG_AVAILDELAY`
+    - :obj:`Card.get_max_trigger_delay`
+  * - Write
+    - :obj:`SPC_TRIG_TERM`
+    - :obj:`Card.trigger_impedance_use_high`, :obj:`Card.trigger_impedance_use_50`
+  * - Read
+    - :obj:`SPC_TRIG_TERM`
+    - :obj:`Card.get_trigger_impedance`
+  * - Write
+    - :obj:`SPC_TRIG_EXT0_ACDC`
+    - :obj:`Card.trigger_coupling_use_dc`, :obj:`Card.trigger_coupling_use_ac`
+  * - Read
+    - :obj:`SPC_TRIG_EXT0_ACDC`
+    - :obj:`Card.get_trigger_coupling`
+  * - Write
+    - :obj:`SPC_TRIG_EXT0_MODE`
+    - :obj:`Card.trigger_disable`, :obj:`Card.use_trigger_positive_edge`, :obj:`Card.use_trigger_negative_edge`, :obj:`Card.use_trigger_both_edge`, :obj:`Card.use_trigger_enter_window`, :obj:`Card.use_trigger_leave_window`, :obj:`Card.use_trigger_high_gate`, :obj:`Card.use_trigger_low_gate`, :obj:`Card.use_trigger_inside_window_gate`, :obj:`Card.use_trigger_outside_window_gate`
+  * - Read
+    - :obj:`SPC_TRIG_EXT0_MODE`
+    - :obj:`Card.get_trigger_mode_information`
+  * - Read
+    - :obj:`SPC_TRIG_EXT0_AVAILMODES`
+    - :obj:`Card.get_available_trigger_modes_information`
+
+  
+Card class
+----------
 """
 
 from spectrum_card.spectrum_header import pyspcm as spcm
@@ -332,6 +402,10 @@ class Card:
       return
     is_remote = ((error_message & spcm.SPCM_ERROR_ORIGIN_MASK) == spcm.SPCM_ERROR_ORIGIN_REMOTE)
     error_message_short = error_message & (~spcm.SPCM_ERROR_ORIGIN_MASK)
+    if error_message_short == spcm.ERR_VALUE:
+      exception_type = ValueError
+    else:
+      exception_type = Exception
     error_dictionary = {
       spcm.ERR_INIT : "ERR_INIT: An error occurred when initializing the given card. Either the card has already been opened by another process or an hardware error occurred.",
       spcm.ERR_NR : "ERR_NR",
@@ -415,7 +489,7 @@ class Card:
     }
     if error_message_short in error_dictionary:
       error_message_short = error_dictionary[error_message_short]
-    raise Exception(f"Spectrum Instruments device error {error_message}:\n{'Remote' if is_remote else 'Local'} device error.\n{error_message_short}")
+    raise exception_type(f"Spectrum Instruments device error {error_message}:\n{'Remote' if is_remote else 'Local'} device error.\n{error_message_short}")
 
   # DLL -------------------------------------------------------------------------
   # =============================================================================
@@ -1610,6 +1684,8 @@ class Card:
       sample_rate *= 1e6
     elif multiplier == "G":
       sample_rate *= 1e9
+    elif multiplier != "":
+      raise ValueError("multiplier must be either \"k\", \"M\", \"G\" or \"\".")
     self._set_int64(spcm.SPC_SAMPLERATE, int(sample_rate))
 
   def get_sample_rate(self):
@@ -1722,6 +1798,8 @@ class Card:
       frequency *= 1e6
     elif multiplier == "G":
       frequency *= 1e9
+    elif multiplier != "":
+      raise ValueError("multiplier must be either \"k\", \"M\", \"G\" or \"\".")
     self._set_int64(spcm.SPC_REFERENCECLOCK, int(frequency))
 
   def get_external_reference_frequency(self):
@@ -1855,16 +1933,16 @@ class Card:
       software = False,
       external_0 = False,
       external_1 = False,
-      pxi_0 = False,
-      pxi_1 = False,
-      pxi_2 = False,
-      pxi_3 = False,
-      pxi_4 = False,
-      pxi_5 = False,
-      pxi_6 = False,
-      pxi_7 = False,
-      pxi_star = False,
-      pxid_star_b = False
+      # pxi_0 = False,
+      # pxi_1 = False,
+      # pxi_2 = False,
+      # pxi_3 = False,
+      # pxi_4 = False,
+      # pxi_5 = False,
+      # pxi_6 = False,
+      # pxi_7 = False,
+      # pxi_star = False,
+      # pxid_star_b = False
     ):
     """
     Writes to :obj:`SPC_TRIG_ORMASK`.
@@ -1877,26 +1955,26 @@ class Card:
       mask |= spcm.SPC_TMASK_EXT0
     if external_1:
       mask |= spcm.SPC_TMASK_EXT1
-    if pxi_0:
-      mask |= spcm.SPC_TMASK_PXI0
-    if pxi_1:
-      mask |= spcm.SPC_TMASK_PXI1
-    if pxi_2:
-      mask |= spcm.SPC_TMASK_PXI2
-    if pxi_3:
-      mask |= spcm.SPC_TMASK_PXI3
-    if pxi_4:
-      mask |= spcm.SPC_TMASK_PXI4
-    if pxi_5:
-      mask |= spcm.SPC_TMASK_PXI5
-    if pxi_6:
-      mask |= spcm.SPC_TMASK_PXI6
-    if pxi_7:
-      mask |= spcm.SPC_TMASK_PXI7
-    if pxi_star:
-      mask |= spcm.SPC_TMASK_PXISTAR
-    if pxid_star_b:
-      mask |= spcm.SPC_TMASK_PXIDSTARB
+    # if pxi_0:
+    #   mask |= spcm.SPC_TMASK_PXI0
+    # if pxi_1:
+    #   mask |= spcm.SPC_TMASK_PXI1
+    # if pxi_2:
+    #   mask |= spcm.SPC_TMASK_PXI2
+    # if pxi_3:
+    #   mask |= spcm.SPC_TMASK_PXI3
+    # if pxi_4:
+    #   mask |= spcm.SPC_TMASK_PXI4
+    # if pxi_5:
+    #   mask |= spcm.SPC_TMASK_PXI5
+    # if pxi_6:
+    #   mask |= spcm.SPC_TMASK_PXI6
+    # if pxi_7:
+    #   mask |= spcm.SPC_TMASK_PXI7
+    # if pxi_star:
+    #   mask |= spcm.SPC_TMASK_PXISTAR
+    # if pxid_star_b:
+    #   mask |= spcm.SPC_TMASK_PXIDSTARB
     self.set_trigger_or_mask(mask)
 
   def get_trigger_or_mask(self):
@@ -2145,16 +2223,16 @@ class Card:
       self,
       external_0 = False,
       external_1 = False,
-      pxi_0 = False,
-      pxi_1 = False,
-      pxi_2 = False,
-      pxi_3 = False,
-      pxi_4 = False,
-      pxi_5 = False,
-      pxi_6 = False,
-      pxi_7 = False,
-      pxi_star = False,
-      pxid_star_b = False
+      # pxi_0 = False,
+      # pxi_1 = False,
+      # pxi_2 = False,
+      # pxi_3 = False,
+      # pxi_4 = False,
+      # pxi_5 = False,
+      # pxi_6 = False,
+      # pxi_7 = False,
+      # pxi_star = False,
+      # pxid_star_b = False
     ):
     """
     Writes to :obj:`SPC_TRIG_ANDMASK`.
@@ -2165,26 +2243,26 @@ class Card:
       mask |= spcm.SPC_TMASK_EXT0
     if external_1:
       mask |= spcm.SPC_TMASK_EXT1
-    if pxi_0:
-      mask |= spcm.SPC_TMASK_PXI0
-    if pxi_1:
-      mask |= spcm.SPC_TMASK_PXI1
-    if pxi_2:
-      mask |= spcm.SPC_TMASK_PXI2
-    if pxi_3:
-      mask |= spcm.SPC_TMASK_PXI3
-    if pxi_4:
-      mask |= spcm.SPC_TMASK_PXI4
-    if pxi_5:
-      mask |= spcm.SPC_TMASK_PXI5
-    if pxi_6:
-      mask |= spcm.SPC_TMASK_PXI6
-    if pxi_7:
-      mask |= spcm.SPC_TMASK_PXI7
-    if pxi_star:
-      mask |= spcm.SPC_TMASK_PXISTAR
-    if pxid_star_b:
-      mask |= spcm.SPC_TMASK_PXIDSTARB
+    # if pxi_0:
+    #   mask |= spcm.SPC_TMASK_PXI0
+    # if pxi_1:
+    #   mask |= spcm.SPC_TMASK_PXI1
+    # if pxi_2:
+    #   mask |= spcm.SPC_TMASK_PXI2
+    # if pxi_3:
+    #   mask |= spcm.SPC_TMASK_PXI3
+    # if pxi_4:
+    #   mask |= spcm.SPC_TMASK_PXI4
+    # if pxi_5:
+    #   mask |= spcm.SPC_TMASK_PXI5
+    # if pxi_6:
+    #   mask |= spcm.SPC_TMASK_PXI6
+    # if pxi_7:
+    #   mask |= spcm.SPC_TMASK_PXI7
+    # if pxi_star:
+    #   mask |= spcm.SPC_TMASK_PXISTAR
+    # if pxid_star_b:
+    #   mask |= spcm.SPC_TMASK_PXIDSTARB
     self.set_trigger_and_mask(mask)
 
   def get_trigger_and_mask(self):
@@ -2413,6 +2491,670 @@ class Card:
       channels.append("Channel 7")
     return channels
   
+  # Triggers --------------------------------------------------------------------
+  # =============================================================================
+
+  def set_trigger_delay(self, delay):
+    """
+    Writes to :obj:`SPC_TRIG_DELAY`.
+
+    Parameters
+    ----------
+    delay : :obj:`int`
+      Delay in number of samples.
+    """
+    return self._set_int64(spcm.SPC_TRIG_DELAY, delay)
+  
+  def get_trigger_delay(self):
+    """
+    Reads :obj:`SPC_TRIG_DELAY`.
+
+    Returns
+    -------
+    delay : :obj:`int`
+      Delay in number of samples.
+    """
+    return self._get_int64(spcm.SPC_TRIG_DELAY)
+  
+  def get_max_trigger_delay(self):
+    """
+    Reads :obj:`SPC_TRIG_AVAILDELAY`.
+
+    Returns
+    -------
+    delay : :obj:`int`
+      Delay in number of samples.
+    """
+    return self._get_int64(spcm.SPC_TRIG_AVAILDELAY)
+
+  def set_trigger_input_termination(self, type):
+    """
+    Writes to :obj:`SPC_TRIG_TERM`.
+    To do this without using bit codes, use :obj:`trigger_impedance_use_high` and :obj:`trigger_impedance_use_50`.
+
+    Parameters
+    ----------
+    type : :obj:`int`
+      Bit code.
+    """
+    self._set_int32(spcm.SPC_TRIG_TERM, type)
+
+  def trigger_impedance_use_high(self):
+    """
+    Writes to :obj:`SPC_TRIG_TERM`.
+    Sets impedance to 1 kOhm.
+    """
+    self.set_trigger_input_termination(1)
+
+  def trigger_impedance_use_50(self):
+    """
+    Writes to :obj:`SPC_TRIG_TERM`.
+    Sets impedance to 50 Ohm.
+    """
+    self.set_trigger_input_termination(0)
+
+  def get_trigger_input_termination(self):
+    """
+    Reads :obj:`SPC_TRIG_TERM`.
+    For decoded information, use :obj:`get_trigger_impedance` instead.
+
+    Returns
+    -------
+    type : :obj:`int`
+      Bit code.
+    """
+    return self._get_int32(spcm.SPC_TRIG_TERM)
+  
+  def get_trigger_impedance(self):
+    """
+    Reads :obj:`SPC_TRIG_TERM`.
+    Returns either :obj:`"High"` or :obj:`"50 Ohm"`.
+
+    Returns
+    -------
+    impedance : :obj:`str`
+      String of input impedance.
+    """
+    bit_code = self.get_trigger_input_termination()
+    if bit_code == 0:
+      return "High"
+    if bit_code == 1:
+      return "50 Ohm"
+    
+  def set_trigger_input_coupling(self, trigger_index, type):
+    """
+    Writes to :obj:`SPC_TRIG_EXT0_ACDC` or :obj:`SPC_TRIG_EXT1_ACDC`.
+    To do this without using bit codes, use :obj:`trigger_coupling_use_dc` and :obj:`trigger_coupling_use_ac`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    type : :obj:`int`
+      Bit code.
+    """
+    self._set_int32(spcm.SPC_TRIG_EXT0_ACDC + (spcm.SPC_TRIG_EXT1_ACDC - spcm.SPC_TRIG_EXT0_ACDC)*trigger_index, type)
+
+  def trigger_coupling_use_dc(self, trigger_index = 1):
+    """
+    Writes to :obj:`SPC_TRIG_EXT0_ACDC` or :obj:`SPC_TRIG_EXT1_ACDC`.
+    Sets trigger coupling to dc.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    """
+    self.set_trigger_input_coupling(trigger_index, 0)
+
+  def trigger_coupling_use_ac(self, trigger_index = 1):
+    """
+    Writes to :obj:`SPC_TRIG_EXT0_ACDC` or :obj:`SPC_TRIG_EXT1_ACDC`.
+    Sets trigger coupling to ac.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    """
+    self.set_trigger_input_coupling(trigger_index, 1)
+
+  def get_trigger_input_coupling(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_ACDC` or :obj:`SPC_TRIG_EXT1_ACDC`.
+    For decoded information, use :obj:`get_trigger_coupling` instead.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    coupling : :obj:`int`
+      Bit code.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT0_ACDC + (spcm.SPC_TRIG_EXT1_ACDC - spcm.SPC_TRIG_EXT0_ACDC)*trigger_index)
+  
+  def get_trigger_coupling(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_ACDC` or :obj:`SPC_TRIG_EXT1_ACDC`.
+    Returns either :obj:`"dc"` or :obj:`"ac"`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    impedance : :obj:`str`
+      String of input impedance.
+    """
+    bit_code = self.get_trigger_input_coupling(trigger_index)
+    if bit_code == 0:
+      return "dc"
+    if bit_code == 1:
+      return "ac"
+    
+  def set_trigger_mode(self, trigger_index, mode):
+    """
+    Writes to :obj:`SPC_TRIG_EXT0_MODE`.
+    To do this without using bit codes, use :obj:`trigger_disable`, :obj:`use_trigger_positive_edge`, :obj:`use_trigger_negative_edge`, :obj:`use_trigger_both_edge`, :obj:`use_trigger_enter_window`, :obj:`use_trigger_leave_window`, :obj:`use_trigger_high_gate`, :obj:`use_trigger_low_gate`, :obj:`use_trigger_inside_window_gate`, or :obj:`use_trigger_outside_window_gate`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    mode : :obj:`int`
+      Bit code.
+    """
+    self._set_int32(spcm.SPC_TRIG_EXT0_MODE + (spcm.SPC_TRIG_EXT1_MODE - spcm.SPC_TRIG_EXT0_MODE)*trigger_index, mode)
+
+  def trigger_disable(self, trigger_index, make_sufficient = True):
+    """
+    Writes :obj:`SPC_TM_NONE` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (default), removes this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_NONE)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask & (~((spcm.SPC_TMASK_EXT0 & 3) << trigger_index)))
+
+  def use_trigger_positive_edge(self, trigger_index, threshold, multiplier = "", re_arm_threshold = None, make_sufficient = True):
+    """
+    Writes :obj:`SPC_TM_POS` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    re_arm_threshold : :obj:`float`
+      Is :obj:`None` by default.
+      Can be set to a voltage (in units determined by :obj:`multiplier`) such that the trigger level must go under this threshold to be re-armed after a trigger (using flag :obj:`SPC_TM_REARM`).
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    if re_arm_threshold is None:
+      self.set_trigger_mode(trigger_index, spcm.SPC_TM_POS)
+    else:
+      self.set_trigger_mode(trigger_index, spcm.SPC_TM_POS | spcm.SPC_TM_REARM)
+      self.set_lower_trigger_threshold(trigger_index, re_arm_threshold, multiplier)
+    self.set_upper_trigger_threshold(trigger_index, threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_negative_edge(self, trigger_index, threshold, multiplier = "", re_arm_threshold = None, make_sufficient = True):
+    """
+    Writes :obj:`SPC_TM_NEG` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    re_arm_threshold : :obj:`float`
+      Is :obj:`None` by default.
+      Can be set to a voltage (in units determined by :obj:`multiplier`) such that the trigger level must go over this threshold to be re-armed after a trigger (using flag :obj:`SPC_TM_REARM`).
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    if re_arm_threshold is None:
+      self.set_trigger_mode(trigger_index, spcm.SPC_TM_NEG)
+      self.set_upper_trigger_threshold(trigger_index, threshold, multiplier)
+    else:
+      self.set_trigger_mode(trigger_index, spcm.SPC_TM_NEG | spcm.SPC_TM_REARM)
+      self.set_lower_trigger_threshold(trigger_index, threshold, multiplier)
+      self.set_upper_trigger_threshold(trigger_index, re_arm_threshold, multiplier)
+    
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_both_edge(self, trigger_index, threshold, multiplier = "", make_sufficient = True):
+    """
+    Writes :obj:`SPC_TM_BOTH` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_BOTH)
+    self.set_upper_trigger_threshold(trigger_index, threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_enter_window(self, trigger_index, lower_threshold, upper_threshold, multiplier = "", make_sufficient = True):
+    """
+    Writes :obj:`SPC_TM_WINENTER` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    lower_threshold : :obj:`float`
+      Voltage.
+    upper_threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_WINENTER)
+    self.set_upper_trigger_threshold(trigger_index, upper_threshold, multiplier)
+    self.set_lower_trigger_threshold(trigger_index, lower_threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_leave_window(self, trigger_index, lower_threshold, upper_threshold, multiplier = "", make_sufficient = True):
+    """
+    Writes :obj:`SPC_TM_WINLEAVE` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    lower_threshold : :obj:`float`
+      Voltage.
+    upper_threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_WINLEAVE)
+    self.set_upper_trigger_threshold(trigger_index, upper_threshold, multiplier)
+    self.set_lower_trigger_threshold(trigger_index, lower_threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_high_gate(self, trigger_index, threshold, multiplier = "", make_sufficient = False):
+    """
+    Writes :obj:`SPC_TM_HIGH` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (:obj:`False` is default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_HIGH)
+    self.set_upper_trigger_threshold(trigger_index, threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_low_gate(self, trigger_index, threshold, multiplier = "", make_sufficient = False):
+    """
+    Writes :obj:`SPC_TM_LOW` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (:obj:`False` is default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_LOW)
+    self.set_upper_trigger_threshold(trigger_index, threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_inside_window_gate(self, trigger_index, lower_threshold ,upper_threshold, multiplier = "", make_sufficient = False):
+    """
+    Writes :obj:`SPC_TM_INWIN` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    lower_threshold : :obj:`float`
+      Voltage.
+    upper_threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (:obj:`False` is default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_INWIN)
+    self.set_upper_trigger_threshold(trigger_index, upper_threshold, multiplier)
+    self.set_lower_trigger_threshold(trigger_index, lower_threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def use_trigger_outside_window_gate(self, trigger_index, lower_threshold ,upper_threshold, multiplier = "", make_sufficient = False):
+    """
+    Writes :obj:`SPC_TM_OUTSIDEWIN` to :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    lower_threshold : :obj:`float`
+      Voltage.
+    upper_threshold : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    make_sufficient : :obj:`bool`
+      If :obj:`True` (:obj:`False` is default), adds this trigger to the OR mask (see :obj:`set_sufficient_triggers`).
+    """
+    self.set_trigger_mode(trigger_index, spcm.SPC_TM_OUTSIDEWIN)
+    self.set_upper_trigger_threshold(trigger_index, upper_threshold, multiplier)
+    self.set_lower_trigger_threshold(trigger_index, lower_threshold, multiplier)
+    if make_sufficient:
+      or_mask = self.get_trigger_or_mask()
+      self.set_trigger_or_mask(or_mask | ((spcm.SPC_TMASK_EXT0 & 3) << trigger_index))
+
+  def get_trigger_mode(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_MODE`.
+    For decoded information, use :obj:`get_trigger_mode_information` instead.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    mode : :obj:`int`
+      Bit code.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT0_MODE + (spcm.SPC_TRIG_EXT1_MODE - spcm.SPC_TRIG_EXT0_MODE)*trigger_index)
+  
+  def get_trigger_mode_information(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_MODE`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    mode : :obj:`str`
+      Current mode in :obj:`str` form.
+    """
+    bit_code = self.get_trigger_mode(trigger_index)
+    re_arm = bit_code & spcm.SPC_TM_REARM != 0
+    bit_code &= spcm.SPC_TM_MODEMASK
+    if bit_code == spcm.SPC_TM_NONE:
+      return "None"
+    elif bit_code == spcm.SPC_TM_POS:
+      if re_arm:
+        return "Positive edge (re-arming)"
+      return "Positive edge"
+    elif bit_code == spcm.SPC_TM_NEG:
+      if re_arm:
+        return "Negative edge (re-arming)"
+      return "Negative edge"
+    elif bit_code == spcm.SPC_TM_BOTH:
+      return "Both edge"
+    elif bit_code == spcm.SPC_TM_HIGH:
+      return "High gate"
+    elif bit_code == spcm.SPC_TM_LOW:
+      return "Low gate"
+    elif bit_code == spcm.SPC_TM_WINENTER:
+      return "Enter window"
+    elif bit_code == spcm.SPC_TM_WINLEAVE:
+      return "Leave window"
+    elif bit_code == spcm.SPC_TM_INWIN:
+      return "Inside window gate"
+    elif bit_code == spcm.SPC_TM_OUTSIDEWIN:
+      return "Outside window gate"
+    
+  def get_available_trigger_modes(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_AVAILMODES`.
+    For decoded information, use :obj:`get_available_trigger_modes_information` instead.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    modes : :obj:`int`
+      Bit code.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT0_AVAILMODES + (spcm.SPC_TRIG_EXT1_MODE - spcm.SPC_TRIG_EXT0_MODE)*trigger_index)
+  
+  def get_available_trigger_modes_information(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_AVAILMODES`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    modes : :obj:`list` of :obj:`str`
+      Available modes in :obj:`str` form.
+    """
+    bit_code = self.get_available_trigger_modes(trigger_index)
+    modes = []
+    if bit_code & spcm.SPC_TM_REARM:
+      modes.append("Re-arming")
+    if bit_code & spcm.SPC_TM_POS:
+      modes.append("Positive edge")
+    if bit_code & spcm.SPC_TM_NEG:
+      modes.append("Negative edge")
+    if bit_code & spcm.SPC_TM_BOTH:
+      modes.append("Both edge")
+    if bit_code & spcm.SPC_TM_HIGH:
+      modes.append("High gate")
+    if bit_code & spcm.SPC_TM_LOW:
+      modes.append("Low gate")
+    if bit_code & spcm.SPC_TM_WINENTER:
+      modes.append("Enter window")
+    if bit_code & spcm.SPC_TM_WINLEAVE:
+      modes.append("Leave window")
+    if bit_code & spcm.SPC_TM_INWIN:
+      modes.append("Inside window gate")
+    if bit_code & spcm.SPC_TM_OUTSIDEWIN:
+      modes.append("Outside window gate")
+    return modes
+  
+  def set_upper_trigger_threshold(self, trigger_index, threshold, multiplier = ""):
+    """
+    Writes to :obj:`SPC_TRIG_EXT0_LEVEL0`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    threshold : :obj:`float`
+      Voltage
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    """
+    if multiplier == "":
+      threshold = int(threshold*1e3)
+    elif multiplier != "m":
+      raise ValueError("multiplier must be either \"m\" or \"\".")
+    self._set_int32(spcm.SPC_TRIG_EXT0_LEVEL0 + (spcm.SPC_TRIG_EXT1_LEVEL0 - spcm.SPC_TRIG_EXT0_LEVEL0)*trigger_index, threshold)
+  
+  def get_upper_trigger_threshold(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_LEVEL0`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Lower voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT0_LEVEL0 + (spcm.SPC_TRIG_EXT1_LEVEL0 - spcm.SPC_TRIG_EXT0_LEVEL0)*trigger_index)*1e-3
+
+  def get_upper_trigger_threshold_min(self):
+    """
+    Reads :obj:`SPC_TRIG_EXT_AVAIL0_MIN`.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Lower voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT_AVAIL0_MIN)*1e-3
+  
+  def get_upper_trigger_threshold_max(self):
+    """
+    Reads :obj:`SPC_TRIG_EXT_AVAIL0_MAX`.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Lower voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT_AVAIL0_MAX)*1e-3
+  
+  def get_upper_trigger_threshold_step(self):
+    """
+    Reads :obj:`SPC_TRIG_EXT_AVAIL0_STEP`.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Lower voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT_AVAIL0_STEP)*1e-3
+  
+  def set_lower_trigger_threshold(self, trigger_index, threshold, multiplier = ""):
+    """
+    Writes to :obj:`SPC_TRIG_EXT0_LEVEL1`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    threshold : :obj:`float`
+      Voltage
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    """
+    if multiplier == "":
+      threshold = int(threshold*1e3)
+    elif multiplier != "m":
+      raise ValueError("multiplier must be either \"m\" or \"\".")
+    self._set_int32(spcm.SPC_TRIG_EXT0_LEVEL1 + (spcm.SPC_TRIG_EXT1_LEVEL0 - spcm.SPC_TRIG_EXT0_LEVEL0)*trigger_index, threshold)
+  
+  def get_lower_trigger_threshold(self, trigger_index):
+    """
+    Reads :obj:`SPC_TRIG_EXT0_LEVEL1`.
+
+    Parameters
+    ----------
+    trigger_index : :obj:`int`
+      Which trigger.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Upper voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT0_LEVEL1 + (spcm.SPC_TRIG_EXT1_LEVEL1 - spcm.SPC_TRIG_EXT0_LEVEL1)*trigger_index)*1e-3
+  
+  def get_lower_trigger_threshold_min(self):
+    """
+    Reads :obj:`SPC_TRIG_EXT_AVAIL1_MIN`.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Upper voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT_AVAIL0_MIN)*1e-3
+  
+  def get_lower_trigger_threshold_max(self):
+    """
+    Reads :obj:`SPC_TRIG_EXT_AVAIL1_MAX`.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Upper voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT_AVAIL0_MAX)*1e-3
+  
+  def get_lower_trigger_threshold_step(self):
+    """
+    Reads :obj:`SPC_TRIG_EXT_AVAIL1_STEP`.
+    
+    Returns
+    -------
+    threshold : :obj:`float`
+      Upper voltage in V.
+    """
+    return self._get_int32(spcm.SPC_TRIG_EXT_AVAIL0_STEP)*1e-3
+
+  
   # Channels --------------------------------------------------------------------
   # =============================================================================
   
@@ -2456,11 +3198,15 @@ class Card:
   def get_number_of_active_channels(self):
     return self._get_int32(spcm.SPC_CHCOUNT)
   
-  def set_amplitude(self, channel_index, amplitude):
+  def set_amplitude(self, channel_index, amplitude, multiplier = ""):
+    if multiplier == "":
+      amplitude = int(amplitude*1e3)
+    elif multiplier != "m":
+      raise ValueError("multiplier must be either \"m\" or \"\".")
     self._set_int32(spcm.SPC_AMP0 + channel_index*(spcm.SPC_AMP1 - spcm.SPC_AMP0), amplitude)
 
   def get_amplitude(self, channel_index):
-    return self._get_int32(spcm.SPC_AMP0 + channel_index*(spcm.SPC_AMP1 - spcm.SPC_AMP0))
+    return (self._get_int32(spcm.SPC_AMP0 + channel_index*(spcm.SPC_AMP1 - spcm.SPC_AMP0)))*1e-3
   
   def set_output_enable(self, channel_index, enable):
     self._set_int32(spcm.SPC_ENABLEOUT0 + channel_index*(spcm.SPC_ENABLEOUT1 - spcm.SPC_ENABLEOUT0), enable)
