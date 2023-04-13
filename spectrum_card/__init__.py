@@ -167,8 +167,8 @@ Driver information
     - :obj:`SPC_GETKERNELVERSION`
     - :obj:`Card.get_kernel_version_information`
 
-Modifications
-.............
+Card modifications
+..................
 
 .. list-table::
   :header-rows: 1
@@ -274,6 +274,46 @@ Clock
     - :obj:`SPC_CLOCKMODE`
     - :obj:`Card.get_clock_mode_information`
 
+Triggers
+........
+
+.. list-table::
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_TRIG_DELAY`
+    - :obj:`Card.set_trigger_delay`
+  * - Read
+    - :obj:`SPC_TRIG_DELAY`
+    - :obj:`Card.get_trigger_delay`
+  * - Read
+    - :obj:`SPC_TRIG_AVAILDELAY`
+    - :obj:`Card.get_max_trigger_delay`
+  * - Write
+    - :obj:`SPC_TRIG_TERM`
+    - :obj:`Card.trigger_impedance_use_high`, :obj:`Card.trigger_impedance_use_50`
+  * - Read
+    - :obj:`SPC_TRIG_TERM`
+    - :obj:`Card.get_trigger_impedance`
+  * - Write
+    - :obj:`SPC_TRIG_EXT0_ACDC`
+    - :obj:`Card.trigger_coupling_use_dc`, :obj:`Card.trigger_coupling_use_ac`
+  * - Read
+    - :obj:`SPC_TRIG_EXT0_ACDC`
+    - :obj:`Card.get_trigger_coupling`
+  * - Write
+    - :obj:`SPC_TRIG_EXT0_MODE`
+    - :obj:`Card.trigger_disable`, :obj:`Card.use_trigger_positive_edge`, :obj:`Card.use_trigger_negative_edge`, :obj:`Card.use_trigger_both_edge`, :obj:`Card.use_trigger_enter_window`, :obj:`Card.use_trigger_leave_window`, :obj:`Card.use_trigger_high_gate`, :obj:`Card.use_trigger_low_gate`, :obj:`Card.use_trigger_inside_window_gate`, :obj:`Card.use_trigger_outside_window_gate`
+  * - Read
+    - :obj:`SPC_TRIG_EXT0_MODE`
+    - :obj:`Card.get_trigger_mode_information`
+  * - Read
+    - :obj:`SPC_TRIG_EXT0_AVAILMODES`
+    - :obj:`Card.get_available_trigger_modes_information`
+
 Trigger masks
 .............
 
@@ -320,7 +360,7 @@ Trigger masks
     - :obj:`SPC_TRIG_CH_AVAILANDMASK0`
     - :obj:`Card.get_available_channels_for_necessary_triggers`
 
-Triggers
+Channels
 ........
 
 .. list-table::
@@ -330,35 +370,50 @@ Triggers
     - Register
     - Equivalent method
   * - Write
-    - :obj:`SPC_TRIG_DELAY`
-    - :obj:`Card.set_trigger_delay`
+    - :obj:`SPC_CHENABLE`
+    - :obj:`Card.set_channels_enable`
   * - Read
-    - :obj:`SPC_TRIG_DELAY`
-    - :obj:`Card.get_trigger_delay`
+    - :obj:`SPC_CHENABLE`
+    - :obj:`Card.get_channels_enable`
   * - Read
-    - :obj:`SPC_TRIG_AVAILDELAY`
-    - :obj:`Card.get_max_trigger_delay`
+    - :obj:`SPC_CHCOUNT`
+    - :obj:`Card.get_number_of_active_channels`
   * - Write
-    - :obj:`SPC_TRIG_TERM`
-    - :obj:`Card.trigger_impedance_use_high`, :obj:`Card.trigger_impedance_use_50`
+    - :obj:`SPC_AMP0`
+    - :obj:`Card.set_amplitude`
   * - Read
-    - :obj:`SPC_TRIG_TERM`
-    - :obj:`Card.get_trigger_impedance`
+    - :obj:`SPC_AMP0`
+    - :obj:`Card.get_amplitude`
   * - Write
-    - :obj:`SPC_TRIG_EXT0_ACDC`
-    - :obj:`Card.trigger_coupling_use_dc`, :obj:`Card.trigger_coupling_use_ac`
+    - :obj:`SPC_ENABLEOUT0`
+    - :obj:`Card.output_enable`, :obj:`Card.output_disable`
   * - Read
-    - :obj:`SPC_TRIG_EXT0_ACDC`
-    - :obj:`Card.get_trigger_coupling`
+    - :obj:`SPC_ENABLEOUT0`
+    - :obj:`Card.get_output_enable`
   * - Write
-    - :obj:`SPC_TRIG_EXT0_MODE`
-    - :obj:`Card.trigger_disable`, :obj:`Card.use_trigger_positive_edge`, :obj:`Card.use_trigger_negative_edge`, :obj:`Card.use_trigger_both_edge`, :obj:`Card.use_trigger_enter_window`, :obj:`Card.use_trigger_leave_window`, :obj:`Card.use_trigger_high_gate`, :obj:`Card.use_trigger_low_gate`, :obj:`Card.use_trigger_inside_window_gate`, :obj:`Card.use_trigger_outside_window_gate`
+    - :obj:`SPC_FILTER0`
+    - :obj:`Card.channel_filter_enable`, :obj:`Card.channel_filter_disable`
   * - Read
-    - :obj:`SPC_TRIG_EXT0_MODE`
-    - :obj:`Card.get_trigger_mode_information`
+    - :obj:`SPC_FILTER0`
+    - :obj:`Card.get_filter`
+  * - Write
+    - :obj:`SPC_DIFF0`
+    - :obj:`Card.differential_enable`, :obj:`Card.differential_disable`
   * - Read
-    - :obj:`SPC_TRIG_EXT0_AVAILMODES`
-    - :obj:`Card.get_available_trigger_modes_information`
+    - :obj:`SPC_DIFF0`
+    - :obj:`Card.get_differential`
+  * - Write
+    - :obj:`SPC_DOUBLEOUT0`
+    - :obj:`Card.double_enable`, :obj:`Card.double_disable`
+  * - Read
+    - :obj:`SPC_DOUBLEOUT0`
+    - :obj:`Card.get_double`
+  * - Write
+    - :obj:`SPC_CH0_STOPLEVEL`, :obj:`SPC_CH0_CUSTOM_STOP`
+    - :obj:`Card.set_channel_stop_level`
+  * - Read
+    - :obj:`SPC_CH0_STOPLEVEL`, :obj:`SPC_CH0_CUSTOM_STOP`
+    - :obj:`Card.get_channel_stop_level`
 
 Multi-purpose input/output (X ports)
 ....................................
@@ -3182,8 +3237,17 @@ class Card:
   # Channels --------------------------------------------------------------------
   # =============================================================================
   
-  def set_channel_enable(self, message):
-    self._set_int64(spcm.SPC_CHENABLE, message)
+  def set_channel_enable(self, channels):
+    """
+    Writes to :obj:`SPC_CHENABLE`.
+    To do this without using bit codes, use :obj:`set_channels_enable`.
+
+    Parameters
+    ----------
+    channels : :obj:`int`
+      Bit code.
+    """
+    self._set_int64(spcm.SPC_CHENABLE, channels)
 
   def set_channels_enable(
       self,
@@ -3192,37 +3256,78 @@ class Card:
       channel_2 = False,
       channel_3 = False
     ):
-    mask = 0
+    """
+    Writes to :obj:`SPC_CHENABLE`.
+    Set any of the parameters to :obj:`True` to enable that channel.
+    """
+    bit_code = 0
     if channel_0:
-      mask |= spcm.CHANNEL0
+      bit_code |= spcm.CHANNEL0
     if channel_1:
-      mask |= spcm.CHANNEL1
+      bit_code |= spcm.CHANNEL1
     if channel_2:
-      mask |= spcm.CHANNEL2
+      bit_code |= spcm.CHANNEL2
     if channel_3:
-      mask |= spcm.CHANNEL3
-    self.set_channel_enable(mask)
+      mbit_code |= spcm.CHANNEL3
+    self.set_channel_enable(bit_code)
 
   def get_channel_enable(self):
+    """
+    Reads :obj:`SPC_CHENABLE`.
+    For decoded information, use :obj:`get_channels_enable`.
+    
+    Returns
+    -------
+    channels : :obj:`int`
+      Bit code.
+    """
     return self._get_int64(spcm.SPC_CHENABLE)
   
   def get_channels_enable(self):
-    mask = self.get_channel_enable()
+    """
+    Reads :obj:`SPC_CHENABLE`.
+    
+    Returns
+    -------
+    channels : :obj:`list` of :obj:`str`
+      List of enabled channels in string form.
+    """
+    bit_code = self.get_channel_enable()
     channels = []
-    if mask & spcm.CHANNEL0:
+    if bit_code & spcm.CHANNEL0:
       channels.append("Channel 0")
-    if mask & spcm.CHANNEL1:
+    if bit_code & spcm.CHANNEL1:
       channels.append("Channel 1")
-    if mask & spcm.CHANNEL2:
+    if bit_code & spcm.CHANNEL2:
       channels.append("Channel 2")
-    if mask & spcm.CHANNEL3:
+    if bit_code & spcm.CHANNEL3:
       channels.append("Channel 3")
     return channels
   
   def get_number_of_active_channels(self):
+    """
+    Reads :obj:`SPC_CHCOUNT`.
+    
+    Returns
+    -------
+    channels : :obj:`int`
+      The number of enabled channels.
+    """
     return self._get_int32(spcm.SPC_CHCOUNT)
   
   def set_amplitude(self, channel_index, amplitude, multiplier = ""):
+    """
+    Writes to :obj:`SPC_AMP0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    amplitude : :obj:`float`
+      Voltage.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    """
     if multiplier == "":
       amplitude = int(amplitude*1e3)
     elif multiplier != "m":
@@ -3230,66 +3335,286 @@ class Card:
     self._set_int32(spcm.SPC_AMP0 + channel_index*(spcm.SPC_AMP1 - spcm.SPC_AMP0), amplitude)
 
   def get_amplitude(self, channel_index):
+    """
+    Reads :obj:`SPC_AMP0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+
+    Returns
+    -------
+    amplitude : :obj:`float`
+      Voltage in V.
+
+    """
     return (self._get_int32(spcm.SPC_AMP0 + channel_index*(spcm.SPC_AMP1 - spcm.SPC_AMP0)))*1e-3
   
   def set_output_enable(self, channel_index, enable):
+    """
+    Writes to :obj:`SPC_ENABLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     self._set_int32(spcm.SPC_ENABLEOUT0 + channel_index*(spcm.SPC_ENABLEOUT1 - spcm.SPC_ENABLEOUT0), enable)
 
   def output_enable(self, channel_index):
+    """
+    Writes 1 to :obj:`SPC_ENABLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    """
     self.set_output_enable(channel_index, 1)
 
   def output_disable(self, channel_index):
+    """
+    Writes 0 to :obj:`SPC_ENABLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    """
     self.set_output_enable(channel_index, 0)
 
   def get_output_enable(self, channel_index):
+    """
+    Reads from :obj:`SPC_ENABLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+
+    Returns
+    -------
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     return self._get_int32(spcm.SPC_ENABLEOUT0 + channel_index*(spcm.SPC_ENABLEOUT1 - spcm.SPC_ENABLEOUT0))
   
   def set_filter(self, channel_index, enable):
+    """
+    Writes to :obj:`SPC_FILTER0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     self._set_int32(spcm.SPC_FILTER0 + channel_index*(spcm.SPC_FILTER1 - spcm.SPC_FILTER0), enable)
 
   def channel_filter_enable(self, channel_index):
+    """
+    Writes 1 to :obj:`SPC_FILTER0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    """
     self.set_filter(channel_index, 1)
 
   def channel_filter_disable(self, channel_index):
+    """
+    Writes 0 to :obj:`SPC_FILTER0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    """
     self.set_filter(channel_index, 0)
 
   def get_filter(self, channel_index):
+    """
+    Reads :obj:`SPC_FILTER0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+
+    Returns
+    -------
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     return self._get_int32(spcm.SPC_FILTER0 + channel_index*(spcm.SPC_FILTER1 - spcm.SPC_FILTER0))
   
   def set_differential(self, channel_index, enable):
+    """
+    Writes to :obj:`SPC_DIFF0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     self._set_int32(spcm.SPC_DIFF0 + channel_index*(spcm.SPC_DIFF1 - spcm.SPC_DIFF0), enable)
 
   def differential_enable(self, channel_index):
+    """
+    Writes 1 to :obj:`SPC_DIFF0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+    """
     self.set_differential(channel_index, 1)
 
   def differential_disable(self, channel_index):
+    """
+    Writes 0 to :obj:`SPC_DIFF0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+    """
     self.set_differential(channel_index, 0)
 
   def get_differential(self, channel_index):
+    """
+    Reads :obj:`SPC_DIFF0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+
+    Returns
+    -------
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     return self._get_int32(spcm.SPC_DIFF0 + channel_index*(spcm.SPC_DIFF1 - spcm.SPC_DIFF0))
   
   def set_double(self, channel_index, enable):
+    """
+    Writes to :obj:`SPC_DOUBLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     self._set_int32(spcm.SPC_DOUBLEOUT0 + channel_index*(spcm.SPC_DOUBLEOUT1 - spcm.SPC_DOUBLEOUT0), enable)
 
   def double_enable(self, channel_index):
+    """
+    Writes 1 to :obj:`SPC_DOUBLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+    """
     self.set_double(channel_index, 1)
 
   def double_disable(self, channel_index):
+    """
+    Writes 0 to :obj:`SPC_DOUBLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+    """
     self.set_double(channel_index, 0)
 
   def get_double(self, channel_index):
+    """
+    Reads :obj:`SPC_DOUBLEOUT0`.
+
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel (0 for channels 0 and 1, 2 for channels 2 and 3).
+
+    Returns
+    -------
+    enable : :obj:`int`
+      :obj:`1` for enabled, :obj:`0` for disabled.
+    """
     return self._get_int32(spcm.SPC_DOUBLEOUT0 + channel_index*(spcm.SPC_DOUBLEOUT1 - spcm.SPC_DOUBLEOUT0))
   
-  def set_stop_level(self, channel_index, message):
-    self._set_int32(spcm.SPC_CH0_STOPLEVEL + channel_index*(spcm.SPC_CH1_STOPLEVEL - spcm.SPC_CH0_STOPLEVEL), message)
+  def set_stop_level(self, channel_index, stop_level_code):
+    """
+    Writes to :obj:`SPC_CH0_STOPLEVEL`.
+    To do this without using bit codes, use :obj:`set_channel_stop_level`.
+    
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    stop_level_code : :obj:`int`
+      Bit code.
+    """
+    self._set_int32(spcm.SPC_CH0_STOPLEVEL + channel_index*(spcm.SPC_CH1_STOPLEVEL - spcm.SPC_CH0_STOPLEVEL), stop_level_code)
 
   def get_stop_level(self, channel_index):
+    """
+    Reads :obj:`SPC_CH0_STOPLEVEL`.
+    For decoded information, use :obj:`get_channel_stop_level`.
+    
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    
+    Returns
+    -------
+    stop_level_code : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_CH0_STOPLEVEL + channel_index*(spcm.SPC_CH1_STOPLEVEL - spcm.SPC_CH0_STOPLEVEL))
   
   def set_stop_level_custom(self, channel_index, value):
+    """
+    Writes to :obj:`SPC_CH0_CUSTOM_STOP`.
+    To do this without using bit codes, use :obj:`set_channel_stop_level`.
+    
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    value : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_CH0_CUSTOM_STOP + channel_index*(spcm.SPC_CH1_CUSTOM_STOP - spcm.SPC_CH0_CUSTOM_STOP), value)
 
   def get_stop_level_custom(self, channel_index):
+    """
+    Reads :obj:`SPC_CH0_CUSTOM_STOP`.
+    For decoded information, use :obj:`get_channel_stop_level`.
+    
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    
+    Returns
+    -------
+    stop_level : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_CH0_CUSTOM_STOP + channel_index*(spcm.SPC_CH1_CUSTOM_STOP - spcm.SPC_CH0_CUSTOM_STOP))
 
   def set_channel_stop_level(
@@ -3301,6 +3626,12 @@ class Card:
       hold_last = False,
       custom_value = None
     ):
+    """
+    Writes to :obj:`SPC_CH0_STOPLEVEL` and :obj:`SPC_CH0_CUSTOM_STOP`.
+    To set a custom value, set the parameter :obj:`custom_value` to a :obj:`float` between :obj:`0.0` and :obj:`1.0`.
+    To set it to any other stop level mode, set that parameter to :obj:`True`.
+    
+    """
     if zero:
       self.set_stop_level(channel_index, spcm.SPCM_STOPLVL_ZERO)
     elif low:
@@ -3315,6 +3646,20 @@ class Card:
       self.set_stop_level_custom(channel_index, int(limit*np.clip(custom_value, -1, 1)))
 
   def get_channel_stop_level(self, channel_index):
+    """
+    Reads :obj:`SPC_CH0_STOPLEVEL` and :obj:`SPC_CH0_CUSTOM_STOP`.
+    
+    Parameters
+    ----------
+    channel_index : :obj:`int`
+      Which channel.
+    
+    Returns
+    -------
+    stop_level : :obj:`str` or :obj:`float`
+      If stop level is set to a particular mode, returns that mode as a :obj:`str`.
+      If this mode is :obj:`SPCM_STOPLVL_CUSTOM` then it returns the custom level as a :obj:`float` between :obj:`0.0` and :obj:`1.0`.
+    """
     stop_level = self.get_stop_level(channel_index)
     if stop_level == spcm.SPCM_STOPLVL_ZERO:
       return "Zero"
