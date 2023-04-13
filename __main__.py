@@ -13,6 +13,7 @@ if __name__ == "__main__":
   signal_square = np.sign(np.cos(math.tau*np.arange(0, signal_length)/signal_length))
   signal_bipolar = 1*(np.arange(0, signal_length) >= signal_length//4) - 1*(np.arange(0, signal_length) < 3*signal_length//4)
   signal_rectified = np.abs(np.cos((math.tau*np.arange(0, signal_length)/signal_length - math.pi/2)/2))
+  signal_aux = signal_sine >= 0
 
   card = sc.Card()
   card.reset()
@@ -132,10 +133,28 @@ if __name__ == "__main__":
   print("Channels for necessary triggers:", card.get_channels_for_necessary_triggers())
 
   print("")
-  print("Sequencing")
+  print("Sequencing:")
   print("Max number of segments:", card.get_max_number_of_segments())
   print("Max number of loops per step:", card.get_max_number_of_loops_per_sequence_step())
   print("Max number of steps:", card.get_max_number_of_sequence_steps())
+
+  print("")
+  print("IO:")
+  card.use_io_mode_asynchronous_input(0)
+  card.use_io_mode_asynchronous_output(1)
+  card.use_io_mode_asynchronous_output(2)
+  card.set_io_asynchronous(1, False)
+  card.set_io_asynchronous(2, False)
+  card.set_io_asynchronous(1, 1)
+  print("X0 available modes:", card.get_available_io_modes_information(0))
+  print("X1 available modes:", card.get_available_io_modes_information(1))
+  print("X2 available modes:", card.get_available_io_modes_information(2))
+  print("X0 mode:", card.get_io_mode_information(0))
+  print("X1 mode:", card.get_io_mode_information(1))
+  print("X2 mode:", card.get_io_mode_information(2))
+  print("X0:", card.get_io_asynchronous(0))
+  print("X1:", card.get_io_asynchronous(1))
+  print("X2:", card.get_io_asynchronous(2))
 
   card.identification_led_enable()
   if do_sequence:
@@ -157,10 +176,13 @@ if __name__ == "__main__":
 
     card.set_memory_size(card.get_number_of_segments()*signal_sine.size)
 
-    card.array_to_device([signal_sine, signal_square, signal_bipolar, signal_rectified], 0)
-    card.array_to_device([signal_rectified, signal_sine, signal_square, signal_bipolar], 1)
-    card.array_to_device([signal_bipolar, signal_rectified, signal_sine, signal_square], 2)
-    card.array_to_device([signal_square, signal_bipolar, signal_rectified, signal_sine], 3)
+    aux_data_channels = [{"Channel" : 1, "Bit" : 13, "Port": 2}]
+    card.array_to_device([signal_sine, signal_square, signal_bipolar, signal_rectified], 0, aux_data = [signal_aux], aux_data_channels = aux_data_channels)
+    card.array_to_device([signal_rectified, signal_sine, signal_square, signal_bipolar], 1, aux_data = [signal_aux], aux_data_channels = aux_data_channels)
+    card.array_to_device([signal_bipolar, signal_rectified, signal_sine, signal_square], 2, aux_data = [signal_aux], aux_data_channels = aux_data_channels)
+    card.array_to_device([signal_square, signal_bipolar, signal_rectified, signal_sine], 3, aux_data = [signal_aux], aux_data_channels = aux_data_channels)
+
+    print("X2 mode:", card.get_io_mode_information(2))
 
     number_of_loops = 100000
     card.set_step_instruction(step = 0, segment = 0, number_of_loops = number_of_loops)
@@ -197,8 +219,8 @@ if __name__ == "__main__":
 
     print("Status:", card.get_status_information())
     print("")
-    card.execute_commands(start = True, enable_trigger = True)
-    # card.execute_commands(start = True, enable_trigger = True, force_trigger = True)
+    # card.execute_commands(start = True, enable_trigger = True)
+    card.execute_commands(start = True, enable_trigger = True, force_trigger = True)
     print("Started.")
     print("")
     tm.sleep(20)

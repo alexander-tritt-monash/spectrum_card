@@ -324,7 +324,6 @@ Triggers
 ........
 
 .. list-table::
-  :widths: 10 45 45
   :header-rows: 1
 
   * - Direction
@@ -360,6 +359,31 @@ Triggers
   * - Read
     - :obj:`SPC_TRIG_EXT0_AVAILMODES`
     - :obj:`Card.get_available_trigger_modes_information`
+
+Multi-purpose input/output (X ports)
+....................................
+
+.. list-table::
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPCM_X0_MODE`
+    - :obj:`Card.io_port_disable`, :obj:`Card.use_io_mode_digital_out`, :obj:`Card.use_io_mode_asynchronous_input`, :obj:`Card.use_io_mode_asynchronous_output`, :obj:`Card.use_io_mode_trigger_output`, :obj:`Card.use_io_mode_run_state_output`, :obj:`Card.use_io_mode_arm_state_output`, :obj:`Card.use_io_mode_continuous_marker_output`, :obj:`Card.use_io_mode_reference_clock_output`, :obj:`Card.use_io_mode_system_clock_output`
+  * - Read
+    - :obj:`SPCM_X0_MODE`
+    - :obj:`Card.get_io_mode_information`
+  * - Read
+    - :obj:`SPCM_X0_AVAILMODES`
+    - :obj:`Card.get_available_io_modes_information`
+  * - Write
+    - :obj:`SPCM_XX_ASYNCIO`
+    - :obj:`Card.set_io_asynchronous`
+  * - Read
+    - :obj:`SPCM_XX_ASYNCIO`
+    - :obj:`Card.get_io_asynchronous`
 
   
 Card class
@@ -3373,27 +3397,53 @@ class Card:
   # DMA and memory --------------------------------------------------------------
   # =============================================================================
   
-  def array_to_device(self, data, segment = 0):
+  def array_to_device(self, data, segment = 0, aux_data = None, aux_data_channels = None):
+    # Change segment
     if self.get_mode_information() == "Sequence":
       self.set_segment_length(segment, data[0].size)
       previous_segment = self.get_current_segment()
       self.set_current_segment(segment)
 
+    # Initialise buffer
     stride = self.get_sample_resolution()
     channels = self.get_number_of_active_channels()
-
-    limit = int(2**(self.get_sample_resolution_bits() - 1) - 1)
-
     data_buffer = spcm_tools.pvAllocMemPageAligned(channels*stride*data[0].size)
     data_pointer = spcm_tools.cast(data_buffer, spcm.ptr16)
+
+    channel_index = 0
     for channel in range(channels):
+      # Find which channel in memory corresponds with each output port
+      while not (self.get_channel_enable() & 1 << channel_index):
+        channel_index += 1
+      
+      # Find out if there are digital outs and, if so, set the discretisation rate
+      max_bits = self.get_sample_resolution_bits()
+      aux_data_reverse_lookup = []
+      if aux_data is not None:
+        for aux_data_channel_index, aux_data_channel in enumerate(aux_data_channels):
+          if aux_data_channel["Channel"] == channel_index:
+            bit = aux_data_channel["Bit"]
+            max_bits = min(bit, max_bits)
+            aux_data_reverse_lookup.append([aux_data_channel_index, bit])
+            self.use_io_mode_digital_out(aux_data_channel["Port"], aux_data_channel["Channel"], aux_data_channel["Bit"])
+      limit = int(2**(max_bits - 1) - 1)
+
+      # Add waveform and digital outs to buffer
       channel_data = data[channel]
       for sample_index, sample in enumerate(channel_data):
-        data_pointer[channel + channels*sample_index] = int(limit*np.clip(sample, -1, 1))
+        # Discretise waveform, and blank out bits meant for aux digital out
+        data_pointer[channel + channels*sample_index] = int(limit*np.clip(sample, -1, 1))# & (~(0x7 << max_bits))
+        # Append aux digital outs
+        for reverse_lookup in aux_data_reverse_lookup:
+          data_pointer[channel + channels*sample_index] |= (int(aux_data[reverse_lookup[0]][sample_index]) & 1) << reverse_lookup[1]
+      # Increment channel
+      channel_index += 1
 
+    # Transfer buffer to card
     self._transfer_array_i64(spcm.SPCM_BUF_DATA, spcm.SPCM_DIR_PCTOCARD, 0, data_buffer, 0, stride*data[0].size*channels)
     self.execute_commands(dma_start = True, dma_wait = True)
 
+    # Tidy up
     if self.get_mode_information() == "Sequence":
       self.set_current_segment(previous_segment)
 
@@ -3559,3 +3609,330 @@ class Card:
       status.append("DMA: Error")
 
     return status
+  
+  # IO lines --------------------------------------------------------------------
+  # =============================================================================
+  def set_io_mode(self, port, mode):
+    """
+    Writes to :obj:`SPCM_X0_MODE`.
+    To do this without using bit codes, use :obj:`io_port_disable`, :obj:`use_io_mode_digital_out`, :obj:`use_io_mode_asynchronous_input`, :obj:`use_io_mode_asynchronous_output`, :obj:`use_io_mode_trigger_output`, :obj:`use_io_mode_run_state_output`, :obj:`use_io_mode_arm_state_output`, :obj:`use_io_mode_continuous_marker_output`, :obj:`use_io_mode_reference_clock_output` or :obj:`use_io_mode_system_clock_output` instead.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    mode : :obj:`int`
+      Bit code.
+    """
+    self._set_int32(spcm.SPCM_X0_MODE + (spcm.SPCM_X1_MODE - spcm.SPCM_X0_MODE)*port, mode)
+  
+  def io_port_disable(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_DISABLE` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_DISABLE)
+
+  def use_io_mode_digital_out(self, port, channel, bit):
+    """
+    Writes :obj:`SPCM_XMODE_DIGOUT` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    command = spcm.SPCM_XMODE_DIGOUT
+    command |= spcm.SPCM_XMODE_DIGOUTSRC_CH0 << channel
+    if bit == 15:
+      command |= spcm.SPCM_XMODE_DIGOUTSRC_BIT15
+    elif bit == 14:
+      command |= spcm.SPCM_XMODE_DIGOUTSRC_BIT14
+    elif bit == 13:
+      command |= spcm.SPCM_XMODE_DIGOUTSRC_BIT13
+    self.set_io_mode(port, command)
+
+  def use_io_mode_asynchronous_input(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_ASYNCIN` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_ASYNCIN)
+
+  def use_io_mode_asynchronous_output(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_ASYNCOUT` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_ASYNCOUT)
+
+  def use_io_mode_trigger_output(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_TRIGOUT` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_TRIGOUT)
+
+  def use_io_mode_run_state_output(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_RUNSTATE` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_RUNSTATE)
+
+  def use_io_mode_arm_state_output(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_ARMSTATE` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_RUNSTATE)
+
+  def use_io_mode_continuous_marker_output(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_CONTOUTMARK` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_RUNSTATE)
+
+  def use_io_mode_reference_clock_output(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_REFCLKOUT` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_REFCLKOUT)
+
+  def use_io_mode_system_clock_output(self, port):
+    """
+    Writes :obj:`SPCM_XMODE_SYSCLKOUT` to :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    """
+    self.set_io_mode(port, spcm.SPCM_XMODE_SYSCLKOUT)
+  
+  def get_io_mode(self, port):
+    """
+    Reads :obj:`SPCM_X0_MODE`.
+    For decoded information, use :obj:`get_available_io_modes_information` instead.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    
+    Returns
+    -------
+    modes : :obj:`int`
+      Bit code.
+    """
+    return self._get_int32(spcm.SPCM_X0_MODE + (spcm.SPCM_X1_MODE - spcm.SPCM_X0_MODE)*port)
+  
+  def get_io_mode_information(self, port):
+    """
+    Reads :obj:`SPCM_X0_MODE`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    
+    Returns
+    -------
+    mode : :obj:`str`
+      Mode in :obj:`str` format
+    """
+    bit_code = self.get_io_mode(port)
+    bit_code_digital_out = bit_code & 0xFFFF0000
+    bit_code &= 0x0000FFFF
+    if bit_code == spcm.SPCM_XMODE_DISABLE:
+      return "Disabled"
+    elif bit_code == spcm.SPCM_XMODE_ASYNCIN:
+      return "Asynchronous input"
+    elif bit_code == spcm.SPCM_XMODE_ASYNCOUT:
+      return "Asynchronous output"
+    elif bit_code == spcm.SPCM_XMODE_DIGIN:
+      return "Digital input"
+    elif bit_code == spcm.SPCM_XMODE_DIGOUT:
+      mode = "Digital output; Channels"
+      if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_CH0:
+        mode += " 0"
+      if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_CH1:
+        mode += " 1"
+      if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_CH2:
+        mode += " 2"
+      if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_CH3:
+        mode += " 3"
+      mode += "; Bit "
+      if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_BIT15:
+        mode += " 15"
+      if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_BIT14:
+        mode += " 14"
+      if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_BIT13:
+        mode += " 13"
+      mode += ";"
+      return mode
+    elif bit_code == spcm.SPCM_XMODE_TRIGOUT:
+      return "Trigger output"
+    elif bit_code == spcm.SPCM_XMODE_DIGIN2BIT:
+      return "Digital (2 bit) input"
+    elif bit_code == spcm.SPCM_XMODE_RUNSTATE:
+      return "Run state output"
+    elif bit_code == spcm.SPCM_XMODE_ARMSTATE:
+      return "Arm state output"
+    elif bit_code == spcm.SPCM_XMODE_REFCLKOUT:
+      return "Reference clock output"
+    elif bit_code == spcm.SPCM_XMODE_SYSCLKOUT:
+      return "System clock output"
+    elif bit_code == spcm.SPCM_XMODE_CONTOUTMARK:
+      return "Continuous marker output"
+  
+  def get_available_io_modes(self, port):
+    """
+    Reads :obj:`SPCM_X0_AVAILMODES`.
+    For decoded information, use :obj:`get_available_io_modes_information` instead.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    
+    Returns
+    -------
+    modes : :obj:`int`
+      Bit code.
+    """
+    return self._get_int32(spcm.SPCM_X0_AVAILMODES + (spcm.SPCM_X1_MODE - spcm.SPCM_X0_MODE)*port)
+
+  def get_available_io_modes_information(self, port):
+    """
+    Reads :obj:`SPCM_X0_AVAILMODES`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    
+    Returns
+    -------
+    modes : :obj:`list` of :obj:`str`
+      Modes in :obj:`str` format
+    """
+    bit_code = self.get_available_io_modes(port)
+    modes = []
+    if bit_code & spcm.SPCM_XMODE_ASYNCIN:
+      modes.append("Asynchronous input")
+    if bit_code & spcm.SPCM_XMODE_ASYNCOUT:
+      modes.append("Asynchronous output")
+    if bit_code & spcm.SPCM_XMODE_DIGIN:
+      modes.append("Digital input")
+    if bit_code & spcm.SPCM_XMODE_DIGOUT:
+      modes.append("Digital output")
+    if bit_code & spcm.SPCM_XMODE_TRIGOUT:
+      modes.append("Trigger output")
+    if bit_code & spcm.SPCM_XMODE_DIGIN2BIT:
+      modes.append("Digital (2 bit) input")
+    if bit_code & spcm.SPCM_XMODE_RUNSTATE:
+      modes.append("Run state output")
+    if bit_code & spcm.SPCM_XMODE_ARMSTATE:
+      modes.append("Arm state output")
+    if bit_code & spcm.SPCM_XMODE_REFCLKOUT:
+      modes.append("Reference clock output")
+    if bit_code & spcm.SPCM_XMODE_SYSCLKOUT:
+      modes.append("System clock output")
+    if bit_code & spcm.SPCM_XMODE_CONTOUTMARK:
+      modes.append("Continuous marker output")
+    return modes
+  
+  def set_io_asynchronous_register(self, value):
+    """
+    Writes to :obj:`SPCM_XX_ASYNCIO`.
+    To do this without using bit codes, use ... instead.
+
+    Parameters
+    ----------
+    value : :obj:`int`
+      Bit code.
+    """
+    self._set_int32(spcm.SPCM_XX_ASYNCIO, value)
+
+  def set_io_asynchronous(self, port, value):
+    """
+    Writes to :obj:`SPCM_XX_ASYNCIO`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    value : :obj:`bool`
+      Port value.
+    """
+    bit_code = self.get_io_asynchronous_register()  # Get previous output
+    if value:
+      bit_code |= (1 << port)
+    else:
+      bit_code &= ~(1 << port)
+    self.set_io_asynchronous_register(bit_code)
+    return (bit_code & (1 << port)) != 0
+  
+  def get_io_asynchronous_register(self):
+    """
+    Reads :obj:`SPCM_XX_ASYNCIO`.
+    For decoded information, use ... instead.
+
+    Returns
+    -------
+    value : :obj:`int`
+      Bit code.
+    """
+    return self._get_int32(spcm.SPCM_XX_ASYNCIO)
+  
+  def get_io_asynchronous(self, port):
+    """
+    Reads :obj:`SPCM_XX_ASYNCIO`.
+
+    Parameters
+    ----------
+    port : :obj:`int`
+      Which IO port.
+    
+    Returns
+    -------
+    value : :obj:`bool`
+      Port value.
+    """
+    bit_code = self.get_io_asynchronous_register()
+    return (bit_code & (1 << port)) != 0
