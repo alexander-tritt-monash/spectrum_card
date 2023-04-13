@@ -415,6 +415,19 @@ Channels
     - :obj:`SPC_CH0_STOPLEVEL`, :obj:`SPC_CH0_CUSTOM_STOP`
     - :obj:`Card.get_channel_stop_level`
 
+Memory and DMA
+..............
+
+.. list-table::
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`spcm_dwDefTransfer_i64`
+    - :obj:`Card.array_to_device`
+
 Multi-purpose input/output (X ports)
 ....................................
 
@@ -3268,7 +3281,7 @@ class Card:
     if channel_2:
       bit_code |= spcm.CHANNEL2
     if channel_3:
-      mbit_code |= spcm.CHANNEL3
+      bit_code |= spcm.CHANNEL3
     self.set_channel_enable(bit_code)
 
   def get_channel_enable(self):
@@ -3628,7 +3641,7 @@ class Card:
     ):
     """
     Writes to :obj:`SPC_CH0_STOPLEVEL` and :obj:`SPC_CH0_CUSTOM_STOP`.
-    To set a custom value, set the parameter :obj:`custom_value` to a :obj:`float` between :obj:`0.0` and :obj:`1.0`.
+    To set a custom value, set the parameter :obj:`custom_value` to a :obj:`float` between :obj:`-1.0` and :obj:`1.0`.
     To set it to any other stop level mode, set that parameter to :obj:`True`.
     
     """
@@ -3658,7 +3671,7 @@ class Card:
     -------
     stop_level : :obj:`str` or :obj:`float`
       If stop level is set to a particular mode, returns that mode as a :obj:`str`.
-      If this mode is :obj:`SPCM_STOPLVL_CUSTOM` then it returns the custom level as a :obj:`float` between :obj:`0.0` and :obj:`1.0`.
+      If this mode is :obj:`SPCM_STOPLVL_CUSTOM` then it returns the custom level as a :obj:`float` between :obj:`-1.0` and :obj:`1.0`.
     """
     stop_level = self.get_stop_level(channel_index)
     if stop_level == spcm.SPCM_STOPLVL_ZERO:
@@ -3743,6 +3756,31 @@ class Card:
   # =============================================================================
   
   def array_to_device(self, data, segment = 0, aux_data = None, aux_data_channels = None):
+    """
+    Transfers signals from the host to the card using :obj:`_transfer_array_i64`.
+
+    Parameters
+    ----------
+    data : :obj:`list` of :obj:`numpy.ndarray` of :obj:`float`
+      A :obj:`list` of sampled waveforms to be transferred to the card.
+      The first element in the :obj:`list` is the waveform that is assigned to the first enabled channel, and so on.
+      Values are assumed to be between :obj:`-1.0` and :obj:`1.0`.
+    segment : :obj:`int`
+      The segment that the waveform is loaded into.
+      Only relevant if the card is in a mode that uses segments, such as sequencing.
+    aux_data : :obj:`list` of :obj:`numpy.ndarray` of :obj:`bool`
+      An optional :obj:`list` of binary waveforms to be played out of the IO ports (X0, X1 and/or X2).
+      Requires information given in :obj:`aux_data_channels`.
+      Will automatically set up port modes and signal discretisation based on information given.
+    aux_data_channels : :obj:`list` of :obj:`dict`
+      Information that says where in which channels the binary waveforms in :obj:`aux_data_channels` are taken from, and which port they are output.
+      Each :obj:`dict` in the overall :obj:`list` corresponds to one of the waveforms in :obj:`aux_data_channels`.
+      The dictionary should contain three elements:
+      :obj:`"Port"` is an :obj:`int` that corresponds to which of the digital IO ports that waveform should be sent to;
+      :obj:`"Channel"` is an :obj:`int` that corresponds to which of the channels the digital waveform should be encoded in; and
+      :obj:`"Bit"` is either :obj:`15`, :obj:`14` or :obj:`13`, which corresponds to which bit of the channel should be sacrificed for the digital waveform.
+      Note that this should be consistent for every segment of memory.
+    """
     # Change segment
     if self.get_mode_information() == "Sequence":
       self.set_segment_length(segment, data[0].size)
@@ -3755,18 +3793,18 @@ class Card:
     data_buffer = spcm_tools.pvAllocMemPageAligned(channels*stride*data[0].size)
     data_pointer = spcm_tools.cast(data_buffer, spcm.ptr16)
 
-    channel_index = 0
+    # channel_index = 0
     for channel in range(channels):
-      # Find which channel in memory corresponds with each output port
-      while not (self.get_channel_enable() & 1 << channel_index):
-        channel_index += 1
+      # # Find which channel in memory corresponds with each output port
+      # while not (self.get_channel_enable() & 1 << channel_index):
+      #   channel_index += 1
       
       # Find out if there are digital outs and, if so, set the discretisation rate
       max_bits = self.get_sample_resolution_bits()
       aux_data_reverse_lookup = []
       if aux_data is not None:
         for aux_data_channel_index, aux_data_channel in enumerate(aux_data_channels):
-          if aux_data_channel["Channel"] == channel_index:
+          if aux_data_channel["Channel"] == channel:
             bit = aux_data_channel["Bit"]
             max_bits = min(bit, max_bits)
             aux_data_reverse_lookup.append([aux_data_channel_index, bit])
@@ -3781,8 +3819,8 @@ class Card:
         # Append aux digital outs
         for reverse_lookup in aux_data_reverse_lookup:
           data_pointer[channel + channels*sample_index] |= (int(aux_data[reverse_lookup[0]][sample_index]) & 1) << reverse_lookup[1]
-      # Increment channel
-      channel_index += 1
+      # # Increment channel
+      # channel_index += 1
 
     # Transfer buffer to card
     self._transfer_array_i64(spcm.SPCM_BUF_DATA, spcm.SPCM_DIR_PCTOCARD, 0, data_buffer, 0, stride*data[0].size*channels)
@@ -4132,7 +4170,7 @@ class Card:
     elif bit_code == spcm.SPCM_XMODE_DIGIN:
       return "Digital input"
     elif bit_code == spcm.SPCM_XMODE_DIGOUT:
-      mode = "Digital output; Channels"
+      mode = "Digital output; Channel"
       if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_CH0:
         mode += " 0"
       if bit_code_digital_out & spcm.SPCM_XMODE_DIGOUTSRC_CH1:
