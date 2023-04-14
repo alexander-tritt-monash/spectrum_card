@@ -16,13 +16,16 @@ Commands
     - :obj:`Card.execute_commands`
   * - :obj:`SPC_M2CMD` Command
     - :obj:`M2CMD_CARD_START`
-    - :obj:`Card.start`
+    - :obj:`Card.start`, :obj:`Card.arm`
   * - :obj:`SPC_M2CMD` Command
     - :obj:`M2CMD_CARD_STOP`
     - :obj:`Card.stop`
   * - :obj:`SPC_M2CMD` Command
     - :obj:`M2CMD_CARD_RESET`
     - :obj:`Card.reset`
+  * - :obj:`SPC_M2CMD` Command
+    - :obj:`M2CMD_CARD_FORCETRIGGER`
+    - :obj:`Card.force_trigger`
   * - :obj:`SPC_M2CMD` Command
     - :obj:`M2CMD_DATA_STARTDMA`
     - :obj:`Card.array_to_device`
@@ -244,7 +247,7 @@ Card mode
     - Equivalent method
   * - Write
     - :obj:`SPC_CARDMODE`
-    - :obj:`Card.set_mode_single`, :obj:`Card.set_mode_multi`, :obj:`Card.set_mode_gate`, :obj:`Card.set_mode_single_restart`, :obj:`Card.set_mode_sequence`, :obj:`Card.set_mode_fifo_single`, :obj:`Card.set_mode_fifo_multi`, :obj:`Card.set_mode_fifo_gate`
+    - :obj:`Card.use_mode_single`, :obj:`Card.use_mode_multi`, :obj:`Card.use_mode_gate`, :obj:`Card.use_mode_single_restart`, :obj:`Card.use_mode_sequence`, :obj:`Card.use_mode_fifo_single`, :obj:`Card.use_mode_fifo_multi`, :obj:`Card.use_mode_fifo_gate`
   * - Read
     - :obj:`SPC_CARDMODE`
     - :obj:`Card.get_mode_information`
@@ -1739,7 +1742,7 @@ class Card:
   def set_mode(self, mode):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card.
-    To do this without using bit codes, use :obj:`set_mode_single`, :obj:`set_mode_multi`, :obj:`set_mode_gate`, :obj:`set_mode_single_restart`, :obj:`set_mode_sequence`, :obj:`set_mode_fifo_single`, :obj:`set_mode_fifo_multi`, or :obj:`set_mode_fifo_gate` instead.
+    To do this without using bit codes, use :obj:`use_mode_single`, :obj:`use_mode_multi`, :obj:`use_mode_gate`, :obj:`use_mode_single_restart`, :obj:`use_mode_sequence`, :obj:`use_mode_fifo_single`, :obj:`use_mode_fifo_multi`, or :obj:`use_mode_fifo_gate` instead.
 
     Parameters
     ----------
@@ -1748,49 +1751,49 @@ class Card:
     """
     self._set_int32(spcm.SPC_CARDMODE, mode)
 
-  def set_mode_single(self):
+  def use_mode_single(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_SINGLE`.
     """
     self.set_mode(spcm.SPC_REP_STD_SINGLE)
   
-  def set_mode_multi(self):
+  def use_mode_multi(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_MULTI`.
     """
     self.set_mode(spcm.SPC_REP_STD_MULTI)
 
-  def set_mode_gate(self):
+  def use_mode_gate(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_GATE`.
     """
     self.set_mode(spcm.SPC_REP_STD_GATE)
 
-  def set_mode_single_restart(self):
+  def use_mode_single_restart(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_SINGLERESTART`.
     """
     self.set_mode(spcm.SPC_REP_STD_SINGLERESTART)
 
-  def set_mode_sequence(self):
+  def use_mode_sequence(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_STD_SEQUENCE`.
     """
     self.set_mode(spcm.SPC_REP_STD_SEQUENCE)
 
-  def set_mode_fifo_single(self):
+  def use_mode_fifo_single(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_FIFO_SINGLE`.
     """
     self.set_mode(spcm.SPC_REP_FIFO_SINGLE)
   
-  def set_mode_fifo_multi(self):
+  def use_mode_fifo_multi(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_FIFO_MULTI`.
     """
     self.set_mode(spcm.SPC_REP_FIFO_MULTI)
 
-  def set_mode_fifo_gate(self):
+  def use_mode_fifo_gate(self):
     """
     Writes to :obj:`SPC_CARDMODE` to set the mode of the card to :obj:`SPC_REP_FIFO_GATE`.
     """
@@ -3875,6 +3878,18 @@ class Card:
     """
     self.execute_commands(start = True)
 
+  def arm(self):
+    """
+    Writes :obj:`M2CMD_CARD_START` and :obj:`M2CMD_CARD_ENABLETRIGGER` to :obj:`SPC_M2CMD`.
+    """
+    self.execute_commands(start = True, enable_trigger = True)
+
+  def force_trigger(self):
+    """
+    Writes :obj:`M2CMD_CARD_FORCETRIGGER` to :obj:`SPC_M2CMD`.
+    """
+    self.execute_commands(force_trigger = True)
+
   def stop(self):
     """
     Writes :obj:`M2CMD_CARD_STOP` to :obj:`SPC_M2CMD`.
@@ -3945,7 +3960,7 @@ class Card:
       Note that this should be consistent for every segment of memory.
     """
     # Change segment
-    if self.get_mode_information() == "Sequence":
+    if self.get_mode_information() in ["Sequence", "Multi"]:
       self.set_segment_length(segment, data[0].size)
       previous_segment = self.get_current_segment()
       self.set_current_segment(segment)
@@ -3956,12 +3971,8 @@ class Card:
     data_buffer = spcm_tools.pvAllocMemPageAligned(channels*stride*data[0].size)
     data_pointer = spcm_tools.cast(data_buffer, spcm.ptr16)
 
-    # channel_index = 0
+    digital_output_used = [False, False, False]
     for channel in range(channels):
-      # # Find which channel in memory corresponds with each output port
-      # while not (self.get_channel_enable() & 1 << channel_index):
-      #   channel_index += 1
-      
       # Find out if there are digital outs and, if so, set the discretisation rate
       max_bits = self.get_sample_resolution_bits()
       aux_data_reverse_lookup = []
@@ -3972,25 +3983,31 @@ class Card:
             max_bits = min(bit, max_bits)
             aux_data_reverse_lookup.append([aux_data_channel_index, bit])
             self.use_io_mode_digital_out(aux_data_channel["Port"], aux_data_channel["Channel"], aux_data_channel["Bit"])
+            digital_output_used[aux_data_channel["Port"]] = True
       limit = int(2**(max_bits - 1) - 1)
 
       # Add waveform and digital outs to buffer
       channel_data = data[channel]
       for sample_index, sample in enumerate(channel_data):
         # Discretise waveform, and blank out bits meant for aux digital out
-        data_pointer[channel + channels*sample_index] = int(limit*np.clip(sample, -1, 1))# & (~(0x7 << max_bits))
+        data_pointer[channel + channels*sample_index] = int(limit*np.clip(sample, -1, 1)) & (~(0x7 << max_bits))
         # Append aux digital outs
         for reverse_lookup in aux_data_reverse_lookup:
           data_pointer[channel + channels*sample_index] |= (int(aux_data[reverse_lookup[0]][sample_index]) & 1) << reverse_lookup[1]
-      # # Increment channel
-      # channel_index += 1
+    
+    # Disable ports if digital io are not in use
+    for port in range(3):
+      if not digital_output_used[port]:
+        io_mode = self.get_io_mode_information(port)
+        if "Digital out" in io_mode:
+          self.io_port_disable(port)
 
     # Transfer buffer to card
     self._transfer_array_i64(spcm.SPCM_BUF_DATA, spcm.SPCM_DIR_PCTOCARD, 0, data_buffer, 0, stride*data[0].size*channels)
     self.execute_commands(dma_start = True, dma_wait = True)
 
     # Tidy up
-    if self.get_mode_information() == "Sequence":
+    if self.get_mode_information() in ["Sequence", "Multi"]:
       self.set_current_segment(previous_segment)
   
   def set_memory_size(self, size):
