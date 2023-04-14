@@ -10,4 +10,5 @@ Welcome to Spectrum Card's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   examples
    spectrum_card
