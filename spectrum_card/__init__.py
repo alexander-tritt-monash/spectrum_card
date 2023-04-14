@@ -2,6 +2,37 @@
 Translation from DLL commands
 -----------------------------
 
+Commands
+........
+
+.. list-table::
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_M2CMD`
+    - :obj:`Card.execute_commands`
+  * - :obj:`SPC_M2CMD` Command
+    - :obj:`M2CMD_CARD_START`
+    - :obj:`Card.start`
+  * - :obj:`SPC_M2CMD` Command
+    - :obj:`M2CMD_CARD_STOP`
+    - :obj:`Card.stop`
+  * - :obj:`SPC_M2CMD` Command
+    - :obj:`M2CMD_CARD_RESET`
+    - :obj:`Card.reset`
+  * - :obj:`SPC_M2CMD` Command
+    - :obj:`M2CMD_DATA_STARTDMA`
+    - :obj:`Card.array_to_device`
+  * - Write
+    - :obj:`SPC_TIMEOUT`
+    - :obj:`Card.set_timeout`
+  * - Read
+    - :obj:`SPC_TIMEOUT`
+    - :obj:`Card.get_timeout`
+
 Card identity
 .............
 
@@ -11,6 +42,9 @@ Card identity
   * - Direction
     - Register
     - Equivalent method
+  * - Call
+    - :obj:`spcm_hOpen`
+    - :obj:`Card`
   * - Read
     - :obj:`SPC_PCITYP`
     - :obj:`Card.get_name`, :obj:`Card.get_series_information`
@@ -60,25 +94,6 @@ Card information
   * - Read
     - :obj:`SPC_MIINST_MAXEXTREFCLOCK`
     - :obj:`Card.get_max_external_reference_clock`
-
-Temperature
-...........
-
-.. list-table::
-  :header-rows: 1
-
-  * - Direction
-    - Register
-    - Equivalent method
-  * - Read
-    - :obj:`SPC_MON_TK_BASE_CTRL`, :obj:`SPC_MON_TC_BASE_CTRL`, :obj:`SPC_MON_TF_BASE_CTRL`
-    - :obj:`Card.get_temperature_base`
-  * - Read
-    - :obj:`SPC_MON_TK_MODULE_0`, :obj:`SPC_MON_TC_MODULE_0`, :obj:`SPC_MON_TF_MODULE_0`
-    - :obj:`Card.get_temperature_module_0`
-  * - Read
-    - :obj:`SPC_MON_TK_MODULE_1`, :obj:`SPC_MON_TC_MODULE_1`, :obj:`SPC_MON_TF_MODULE_1`
-    - :obj:`Card.get_temperature_module_1`
 
 Hardware and PCB version
 ........................
@@ -195,6 +210,25 @@ Features and functions
   * - Read
     - :obj:`SPC_FNCTYPE`
     - :obj:`Card.get_functions_information`
+
+Temperature
+...........
+
+.. list-table::
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_MON_TK_BASE_CTRL`, :obj:`SPC_MON_TC_BASE_CTRL`, :obj:`SPC_MON_TF_BASE_CTRL`
+    - :obj:`Card.get_temperature_base`
+  * - Read
+    - :obj:`SPC_MON_TK_MODULE_0`, :obj:`SPC_MON_TC_MODULE_0`, :obj:`SPC_MON_TF_MODULE_0`
+    - :obj:`Card.get_temperature_module_0`
+  * - Read
+    - :obj:`SPC_MON_TK_MODULE_1`, :obj:`SPC_MON_TC_MODULE_1`, :obj:`SPC_MON_TF_MODULE_1`
+    - :obj:`Card.get_temperature_module_1`
 
 Card mode
 .........
@@ -424,9 +458,24 @@ Memory and DMA
   * - Direction
     - Register
     - Equivalent method
-  * - Write
+  * - Call
     - :obj:`spcm_dwDefTransfer_i64`
     - :obj:`Card.array_to_device`
+  * - Write
+    - :obj:`SPC_MEMSIZE`
+    - :obj:`Card.set_memory_size`
+  * - Read
+    - :obj:`SPC_MEMSIZE`
+    - :obj:`Card.get_memory_size`
+  * - Read
+    - :obj:`SPC_PCIMEMSIZE`
+    - :obj:`Card.get_max_memory_size`
+  * - Write
+    - :obj:`SPC_MEMTEST`
+    - :obj:`Card.memory_test_start`, :obj:`Card.memory_test_stop`
+  * - Read
+    - :obj:`SPC_MEMTEST`
+    - :obj:`Card.get_memory_test`
 
 Multi-purpose input/output (X ports)
 ....................................
@@ -3643,7 +3692,6 @@ class Card:
     Writes to :obj:`SPC_CH0_STOPLEVEL` and :obj:`SPC_CH0_CUSTOM_STOP`.
     To set a custom value, set the parameter :obj:`custom_value` to a :obj:`float` between :obj:`-1.0` and :obj:`1.0`.
     To set it to any other stop level mode, set that parameter to :obj:`True`.
-    
     """
     if zero:
       self.set_stop_level(channel_index, spcm.SPCM_STOPLVL_ZERO)
@@ -3690,6 +3738,15 @@ class Card:
   # =============================================================================
   
   def execute_command(self, command):
+    """
+    Writes to :obj:`SPC_M2CMD`.
+    To do this without using bit codes, use :obj:`execute_commands`.
+    
+    Parameters
+    ----------
+    command : :obj:`int`
+      Bit code.
+    """
     self._set_int32(spcm.SPC_M2CMD, command)
 
   def execute_commands(
@@ -3708,6 +3765,10 @@ class Card:
       wait_for_trigger = False,
       wait_until_ready = False
     ):
+    """
+    Writes to :obj:`SPC_M2CMD`.
+    To call a command, set the corresponding parameter to :obj:`True`.
+    """
     command = 0
     if reset:
       command |= spcm.M2CMD_CARD_RESET
@@ -3738,19 +3799,50 @@ class Card:
     self.execute_command(command)
 
   def start(self):
+    """
+    Writes :obj:`M2CMD_CARD_START` to :obj:`SPC_M2CMD`.
+    """
     self.execute_commands(start = True)
 
   def stop(self):
+    """
+    Writes :obj:`M2CMD_CARD_STOP` to :obj:`SPC_M2CMD`.
+    """
     self.execute_commands(stop = True)
 
   def reset(self):
+    """
+    Writes :obj:`M2CMD_CARD_RESET` to :obj:`SPC_M2CMD`.
+    """
     self.execute_commands(reset = True)
 
-  def set_timeout(self, time_to_live):
+  def set_timeout(self, time_to_live, multiplier = ""):
+    """
+    Writes to :obj:`SPC_TIMEOUT`.
+    
+    Parameters
+    ----------
+    time_to_live : :obj:`int`
+      Timeout duration in seconds.
+    multiplier : :obj:`str`
+      Can be metric prefixes :obj:`""` (default), or :obj:`"m"`.
+    """
+    if multiplier == "":
+      time_to_live = int(time_to_live*1e3)
+    elif multiplier != "m":
+      raise ValueError("multiplier must be either \"m\" or \"\".")
     self._set_int32(spcm.SPC_TIMEOUT, time_to_live)
 
   def get_timeout(self):
-    return self._get_int32(spcm.SPC_TIMEOUT)
+    """
+    Reads :obj:`SPC_TIMEOUT`.
+    
+    Returns
+    -------
+    time_to_live : :obj:`int`
+      Timeout duration in seconds.
+    """
+    return self._get_int32(spcm.SPC_TIMEOUT)*1e-3
 
   # DMA and memory --------------------------------------------------------------
   # =============================================================================
@@ -3829,26 +3921,72 @@ class Card:
     # Tidy up
     if self.get_mode_information() == "Sequence":
       self.set_current_segment(previous_segment)
-
-  def get_max_memory_size(self):
-    return self._get_int64(spcm.SPC_PCIMEMSIZE)
   
   def set_memory_size(self, size):
+    """
+    Writes to :obj:`SPC_MEMSIZE`.
+    
+    Parameters
+    ----------
+    size : :obj:`int`
+      Memory size in samples per channel.
+    """
     self._set_int64(spcm.SPC_MEMSIZE, size)
   
   def get_memory_size(self):
+    """
+    Reads :obj:`SPC_MEMSIZE`.
+    
+    Returns
+    -------
+    size : :obj:`int`
+      Memory size in samples per channel.
+    """
     return self._get_int64(spcm.SPC_MEMSIZE)
   
-  def set_memory_test(self, value):
-    self._set_int64(spcm.SPC_MEMTEST, value)
+  def get_max_memory_size(self):
+    """
+    Reads :obj:`SPC_PCIMEMSIZE`.
+    
+    Returns
+    -------
+    size : :obj:`int`
+      Memory size on the card in Bytes.
+    """
+    return self._get_int64(spcm.SPC_PCIMEMSIZE)
+  
+  def set_memory_test(self, enable):
+    """
+    Writes to :obj:`SPC_MEMTEST`.
+    
+    Parameters
+    ----------
+    enable : :obj:`int`
+      :obj:`1` if mode is enabled, :obj:`0` otherwise.
+    """
+    self._set_int64(spcm.SPC_MEMTEST, enable)
 
   def memory_test_start(self):
+    """
+    Writes :obj:`1` to :obj:`SPC_MEMTEST`.
+    """
     self.set_memory_test(self, 1)
 
   def memory_test_stop(self):
+    """
+    Writes :obj:`0` to :obj:`SPC_MEMTEST`.
+    """
     self.set_memory_test(self, 0)
 
-  def get_memory_test(self, value):
+  def get_memory_test(self):
+    """
+    Reads :obj:`SPC_MEMTEST`.
+    
+    Returns
+    -------
+    enable : :obj:`int`
+      :obj:`1` if mode is enabled, :obj:`0` otherwise.
+    """
     return self._get_int64(spcm.SPC_MEMTEST)
 
   # Sequencing ------------------------------------------------------------------
