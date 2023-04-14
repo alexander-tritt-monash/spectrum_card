@@ -185,10 +185,12 @@ if __name__ == "__main__":
     print("X2 mode:", card.get_io_mode_information(2))
 
     number_of_loops = 100000
-    card.set_step_instruction(step = 0, segment = 0, number_of_loops = number_of_loops)
-    card.set_step_instruction(step = 1, segment = 1, number_of_loops = number_of_loops//2)
-    card.set_step_instruction(step = 2, segment = 2, number_of_loops = number_of_loops*2)
-    card.set_step_instruction(step = 3, segment = 3, number_of_loops = number_of_loops, next_step = 0)
+    card.set_step_instruction(0, 0, number_of_loops)
+    card.set_step_instruction(1, 1, number_of_loops//2)
+    card.set_step_instruction(2, 2, number_of_loops*2)
+    card.set_step_instruction(3, 3, number_of_loops, next_step = 0)
+    print("Step instruction 0:", card.get_step_instruction(0))
+    print("Step instruction 3:", card.get_step_instruction(3))
     # card.set_step_instruction(step = 4, segment = 0, number_of_loops = number_of_loops)
     # card.set_step_instruction(step = 5, segment = 1, number_of_loops = number_of_loops//2)
     # card.set_step_instruction(step = 6, segment = 2, number_of_loops = number_of_loops*2)

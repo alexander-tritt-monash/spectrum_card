@@ -26,6 +26,9 @@ Commands
   * - :obj:`SPC_M2CMD` Command
     - :obj:`M2CMD_DATA_STARTDMA`
     - :obj:`Card.array_to_device`
+  * - Read
+    - :obj:`SPC_M2STATUS`
+    - :obj:`Card.get_status_information`
   * - Write
     - :obj:`SPC_TIMEOUT`
     - :obj:`Card.set_timeout`
@@ -221,13 +224,13 @@ Temperature
     - Register
     - Equivalent method
   * - Read
-    - :obj:`SPC_MON_TK_BASE_CTRL`, :obj:`SPC_MON_TC_BASE_CTRL`, :obj:`SPC_MON_TF_BASE_CTRL`
+    - :obj:`SPC_MON_TC_BASE_CTRL`
     - :obj:`Card.get_temperature_base`
   * - Read
-    - :obj:`SPC_MON_TK_MODULE_0`, :obj:`SPC_MON_TC_MODULE_0`, :obj:`SPC_MON_TF_MODULE_0`
+    - :obj:`SPC_MON_TC_MODULE_0`
     - :obj:`Card.get_temperature_module_0`
   * - Read
-    - :obj:`SPC_MON_TK_MODULE_1`, :obj:`SPC_MON_TC_MODULE_1`, :obj:`SPC_MON_TF_MODULE_1`
+    - :obj:`SPC_MON_TC_MODULE_1`
     - :obj:`Card.get_temperature_module_1`
 
 Card mode
@@ -448,6 +451,74 @@ Channels
   * - Read
     - :obj:`SPC_CH0_STOPLEVEL`, :obj:`SPC_CH0_CUSTOM_STOP`
     - :obj:`Card.get_channel_stop_level`
+
+Playback
+........
+
+.. list-table::
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Write
+    - :obj:`SPC_LOOPS`
+    - :obj:`Card.set_number_of_loops`
+  * - Read
+    - :obj:`SPC_LOOPS`
+    - :obj:`Card.get_number_of_loops`
+
+Sequencing
+..........
+
+.. list-table::
+  :header-rows: 1
+
+  * - Direction
+    - Register
+    - Equivalent method
+  * - Read
+    - :obj:`SPC_SEQMODE_AVAILMAXSEGMENT`
+    - :obj:`Card.get_max_number_of_segments`
+  * - Read
+    - :obj:`SPC_SEQMODE_AVAILMAXSTEPS`
+    - :obj:`Card.get_max_number_of_sequence_steps`
+  * - Read
+    - :obj:`SPC_SEQMODE_AVAILMAXLOOP`
+    - :obj:`Card.get_max_number_of_loops_per_sequence_step`
+  * - Read
+    - :obj:`SPC_SEQMODE_AVAILFEATURES`
+    - :obj:`Card.get_available_sequence_features_information`
+  * - Write
+    - :obj:`SPC_SEQMODE_MAXSEGMENTS`
+    - :obj:`Card.set_number_of_segments`
+  * - Read
+    - :obj:`SPC_SEQMODE_MAXSEGMENTS`
+    - :obj:`Card.get_number_of_segments`
+  * - Write
+    - :obj:`SPC_SEQMODE_WRITESEGMENT`
+    - :obj:`Card.set_current_segment`
+  * - Read
+    - :obj:`SPC_SEQMODE_WRITESEGMENT`
+    - :obj:`Card.get_current_segment`
+  * - Write
+    - :obj:`SPC_SEQMODE_SEGMENTSIZE`
+    - :obj:`Card.set_segment_length`
+  * - Read
+    - :obj:`SPC_SEQMODE_SEGMENTSIZE`
+    - :obj:`Card.get_segment_length`
+  * - Write
+    - :obj:`SPC_SEQMODE_STEPMEM0`
+    - :obj:`Card.set_step_instruction`
+  * - Read
+    - :obj:`SPC_SEQMODE_STEPMEM0`
+    - :obj:`Card.get_step_instruction`
+  * - Write
+    - :obj:`SPC_SEQMODE_STARTSTEP`
+    - :obj:`Card.set_start_step`
+  * - Read
+    - :obj:`SPC_SEQMODE_STARTSTEP`
+    - :obj:`Card.get_start_step`
 
 Memory and DMA
 ..............
@@ -1817,7 +1888,7 @@ class Card:
     sample_rate : :obj:`int`
       The sample rate in S/s.
     multiplier : :obj:`str`
-      Can be metric prefixes :obj:`""` (default), :obj:`"k"`, obj:`"M"` or obj:`"G"`, which multiply the sample rate by 1, 1 000, 1 000 000 or 1 000 000 000 respectively.
+      Can be metric prefixes :obj:`""` (default), :obj:`"k"`, :obj:`"M"` or :obj:`"G"`.
     """
     if multiplier == "k":
       sample_rate *= 1e3
@@ -1931,7 +2002,7 @@ class Card:
     frequency : :obj:`int`
       Reference frequency in Hz.
     multiplier : :obj:`str`
-      Can be metric prefixes :obj:`""` (default), :obj:`"k"`, obj:`"M"` or obj:`"G"`, which multiply the reference frequency by 1, 1 000, 1 000 000 or 1 000 000 000 respectively.
+      Can be metric prefixes :obj:`""` (default), :obj:`"k"`, :obj:`"M"` or :obj:`"G"`.
     """
     if multiplier == "k":
       frequency *= 1e3
@@ -3988,17 +4059,69 @@ class Card:
       :obj:`1` if mode is enabled, :obj:`0` otherwise.
     """
     return self._get_int64(spcm.SPC_MEMTEST)
+  
+  # Playback --------------------------------------------------------------------
+  # =============================================================================
+  
+  def set_number_of_loops(self, number_of_loops):
+    """
+    Writes to :obj:`SPC_LOOPS`.
+    
+    Parameters
+    ----------
+    number_of_loops : :obj:`int`
+      How many times the waveform should be looped.
+      If set to :obj:`0`, will loop indefinitely.
+    """
+    self._set_int32(spcm.SPC_LOOPS, number_of_loops)
+  
+  def get_number_of_loops(self):
+    """
+    Writes to :obj:`SPC_LOOPS`.
+    
+    Returns
+    -------
+    number_of_loops : :obj:`int`
+      How many times the waveform should be looped.
+      If set to :obj:`0`, will loop indefinitely.
+    """
+    return self._get_int32(spcm.SPC_LOOPS)
 
   # Sequencing ------------------------------------------------------------------
   # =============================================================================
   
   def get_max_number_of_segments(self):
+    """
+    Reads :obj:`SPC_SEQMODE_AVAILMAXSEGMENT`.
+    
+    Returns
+    -------
+    size : :obj:`int`
+      Max number of segments that can be used with the card.
+    """
     return self._get_int64(spcm.SPC_SEQMODE_AVAILMAXSEGMENT)
   
   def get_max_number_of_sequence_steps(self):
+    """
+    Reads :obj:`SPC_SEQMODE_AVAILMAXSTEPS`.
+    
+    Returns
+    -------
+    size : :obj:`int`
+      Max number of steps that can be used with the card.
+    """
     return self._get_int64(spcm.SPC_SEQMODE_AVAILMAXSTEPS)
   
   def get_max_number_of_loops_per_sequence_step(self):
+    """
+    Reads :obj:`SPC_SEQMODE_AVAILMAXLOOP`.
+    
+    Returns
+    -------
+    loops : :obj:`int`
+      Max number of loops that can be used in each sequence step.
+      Note that steps can also be set to loop indefinitely. 
+    """
     return self._get_int64(spcm.SPC_SEQMODE_AVAILMAXLOOP)
   
   def get_available_sequence_features(self):
@@ -4014,6 +4137,14 @@ class Card:
     return self._get_int64(spcm.SPC_SEQMODE_AVAILFEATURES)
   
   def get_available_sequence_features_information(self):
+    """
+    Reads :obj:`SPC_SEQMODE_AVAILFEATURES`.
+
+    Returns
+    -------
+    features : :obj:`list` of :obj:`str`
+      The features that can be used in sequence mode in :obj:`str` format.
+    """
     bitmap = self.get_available_sequence_features()
     features = []
     if bitmap & spcm.SPCSEQ_ENDLOOPONTRIG:
@@ -4023,30 +4154,105 @@ class Card:
     return features
   
   def set_number_of_segments(self, number_of_segments):
+    """
+    Writes to :obj:`SPC_SEQMODE_MAXSEGMENTS`.
+    
+    Parameters
+    ----------
+    number_of_segments : :obj:`int`
+      The number of segments to split the memory into.
+    """
     self._set_int64(spcm.SPC_SEQMODE_MAXSEGMENTS, number_of_segments)
 
   def get_number_of_segments(self):
+    """
+    Reads :obj:`SPC_SEQMODE_MAXSEGMENTS`.
+    
+    Returns
+    -------
+    number_of_segments : :obj:`int`
+      The number of segments to split the memory into.
+    """
     return self._get_int64(spcm.SPC_SEQMODE_MAXSEGMENTS)
   
   def set_current_segment(self, segment):
+    """
+    Writes to :obj:`SPC_SEQMODE_WRITESEGMENT`.
+    
+    Parameters
+    ----------
+    segment : :obj:`int`
+      The segment currently "armed" for reading and writing to.
+    """
     self._set_int64(spcm.SPC_SEQMODE_WRITESEGMENT, segment)
 
   def get_current_segment(self):
+    """
+    Reads :obj:`SPC_SEQMODE_WRITESEGMENT`.
+    
+    Returns
+    -------
+    segment : :obj:`int`
+      The segment currently "armed" for reading and writing to.
+    """
     return self._get_int64(spcm.SPC_SEQMODE_WRITESEGMENT)
   
   def set_segment_size(self, size):
+    """
+    Writes to :obj:`SPC_SEQMODE_SEGMENTSIZE`.
+    Sets the length of the currently armed segment.
+    
+    Parameters
+    ----------
+    size : :obj:`int`
+      Length of segment in samples per channel.
+    """
     self._set_int64(spcm.SPC_SEQMODE_SEGMENTSIZE, size)
 
-  def get_segment_size(self):
-    return self._get_int64(spcm.SPC_SEQMODE_SEGMENTSIZE)
-  
   def set_segment_length(self, segment, length):
+    """
+    Writes to :obj:`SPC_SEQMODE_SEGMENTSIZE`.
+    Sets the length of any segment segment.
+    
+    Parameters
+    ----------
+    segment : :obj:`int`
+      The segment to set the length of.
+    size : :obj:`int`
+      Length of segment in samples per channel.
+    """
     previous_segment = self.get_current_segment()
     self.set_current_segment(segment)
     self.set_segment_size(length)
     self.set_current_segment(previous_segment)
 
+  def get_segment_size(self):
+    """
+    Reads :obj:`SPC_SEQMODE_SEGMENTSIZE`.
+    Reads the length of the currently armed segment.
+    
+    Returns
+    -------
+    size : :obj:`int`
+      Length of segment in samples per channel.
+    """
+    return self._get_int64(spcm.SPC_SEQMODE_SEGMENTSIZE)
+
   def get_segment_length(self, segment):
+    """
+    Reads :obj:`SPC_SEQMODE_SEGMENTSIZE`.
+    Reads the length of any segment segment.
+    
+    Parameters
+    ----------
+    segment : :obj:`int`
+      The segment to get the length of.
+    
+    Returns
+    -------
+    size : :obj:`int`
+      Length of segment in samples per channel.
+    """
     previous_segment = self.get_current_segment()
     self.set_current_segment(segment)
     length = self.get_segment_size()
@@ -4054,20 +4260,47 @@ class Card:
     return length
   
   def set_sequence_instruction(self, step, instruction):
+    """
+    Writes to :obj:`SPC_SEQMODE_STEPMEM0`.
+    To do this without using bit codes, use :obj:`set_step_instruction`.
+    
+    Parameters
+    ----------
+    step : :obj:`int`
+      The step to write to.
+    instruction : :obj:`int`
+      Bit code.
+    """
     self._set_int64(spcm.SPC_SEQMODE_STEPMEM0 + step, instruction)
 
-  def get_sequence_instruction(self, step):
-    return self._get_int64(spcm.SPC_SEQMODE_STEPMEM0 + step)
-  
   def set_step_instruction(
       self,
       step,
-      segment = 0,
+      segment,
+      number_of_loops = 1,
       next_step = None, 
-      number_of_loops = 0,
       loop_until_trigger = False,
       end_of_sequence = False
       ):
+    """
+    Writes to :obj:`SPC_SEQMODE_STEPMEM0`.
+    
+    Parameters
+    ----------
+    step : :obj:`int`
+      The step to write to.
+    segment : :obj:`int`
+      The segment the step points to.
+    number_of_loops : :obj:`int`
+      How many times the step should be looped.
+    next_step : :obj:`int`
+      The step that follows this one.
+      If :obj:`None` (default), will either point to step :obj:`step + 1` or, if :obj:`end_of_sequence` is set to :obj:`True`, will point to step :obj:`0`.
+    loop_until_trigger : :obj:`bool`
+      Whether to wait for a trigger until proceeding to the next step.
+    end_of_sequence : :obj:`bool`
+      Whether or not the step is the final step in the sequence.
+    """
     instruction = 0x0000000000000000
 
     instruction |= segment & spcm.SPCSEQ_SEGMENTMASK
@@ -4089,25 +4322,92 @@ class Card:
     
     self.set_sequence_instruction(step, instruction)
 
+  def get_sequence_instruction(self, step):
+    """
+    Reads :obj:`SPC_SEQMODE_STEPMEM0`.
+    For decoded information, use :obj:`get_step_instruction` instead.
+    
+    Parameters
+    ----------
+    step : :obj:`int`
+      The step to write to.
+
+    Returns
+    -------
+    instruction : :obj:`int`
+      Bit code.
+    """
+    return self._get_int64(spcm.SPC_SEQMODE_STEPMEM0 + step)
+  
+  def get_step_instruction(self, step):
+    """
+    Reads :obj:`SPC_SEQMODE_STEPMEM0`.
+    
+    Parameters
+    ----------
+    step : :obj:`int`
+      The step to write to.
+
+    Returns
+    -------
+    instruction : :obj:`dict`
+      Contains information under keys of :obj:`"Segment"`, :obj:`"Next step"`, :obj:`"Number of loops"`, :obj:`"Loop until trigger"` and :obj:`"End of sequence"`.
+      Each has the same meaning as in the parameters for :obj:`set_step_instruction`.
+    """
+    bit_code = self.get_sequence_instruction(step)
+    segment = bit_code & spcm.SPCSEQ_SEGMENTMASK
+    next_step = (bit_code & spcm.SPCSEQ_NEXTSTEPMASK) >> 16
+    number_of_loops = (bit_code >> 32) & spcm.SPCSEQ_LOOPMASK
+    loop_until_trigger = (((bit_code >> 32) & spcm.SPCSEQ_ENDLOOPONTRIG) != 0)
+    end_of_sequence = (((bit_code >> 32) & spcm.SPCSEQ_END) != 0)
+    return {"Segment":segment, "Next step":next_step, "Number of loops":number_of_loops, "Loop until trigger":loop_until_trigger, "End of sequence":end_of_sequence}
+
   def set_start_step(self, step):
+    """
+    Writes to :obj:`SPC_SEQMODE_STARTSTEP`.
+    
+    Parameters
+    ----------
+    step : :obj:`int`
+      The starting step of the sequence.
+    """
     self._set_int64(spcm.SPC_SEQMODE_STARTSTEP, step)
 
   def get_start_step(self):
+    """
+    Reads :obj:`SPC_SEQMODE_STARTSTEP`.
+    
+    Returns
+    -------
+    step : :obj:`int`
+      The starting step of the sequence.
+    """
     return self._get_int64(spcm.SPC_SEQMODE_STARTSTEP)
-  
-  def set_number_of_loops(self, number_of_loops):
-    self._set_int32(spcm.SPC_LOOPS, number_of_loops)
-  
-  def get_number_of_loops(self):
-    return self._get_int32(spcm.SPC_LOOPS)
 
   # Status ----------------------------------------------------------------------
   # =============================================================================
   
   def get_status(self):
+    """
+    Reads :obj:`SPC_M2STATUS`.
+    For decoded information, use :obj:`get_status_information` instead.
+    
+    Returns
+    -------
+    status : :obj:`int`
+      Bit code.
+    """
     return self._get_int32(spcm.SPC_M2STATUS)
   
   def get_status_information(self):
+    """
+    Reads :obj:`SPC_M2STATUS`.
+    
+    Returns
+    -------
+    status : :obj:`list` of :obj:`list`
+      A list describing the status of the card.
+    """
     status = []
     response = self.get_status()
 
