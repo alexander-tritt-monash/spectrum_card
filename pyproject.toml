@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spectrum_card"
-version = "1.0.0"
+version = "1.0.1"
 description = "Wrapper to be used with AWG cards from Spectrum Instruments."
 authors = ["Alexander Tritt Monash <alexander.tritt@monash.edu>"]
 license = "BSD 3 Clause"

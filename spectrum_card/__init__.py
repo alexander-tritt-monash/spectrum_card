@@ -598,7 +598,7 @@ class Card:
   def __init__(self, device_address = b"/dev/spcm0"):
     self.is_alive = False
     self.card_handle = spcm.spcm_hOpen(spcm.create_string_buffer(device_address))
-    if self.card_handle == None:
+    if self.card_handle is None:
       raise Exception("No card found...")
     self.is_alive = True
     
