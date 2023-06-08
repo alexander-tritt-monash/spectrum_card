@@ -3970,6 +3970,8 @@ class Card:
     channels = self.get_number_of_active_channels()
     data_buffer = spcm_tools.pvAllocMemPageAligned(channels*stride*data[0].size)
     data_pointer = spcm_tools.cast(data_buffer, spcm.ptr16)
+    if aux_data is None:
+      data_np = np.frombuffer(data_buffer, dtype = np.int16)
 
     digital_output_used = [False, False, False]
     for channel in range(channels):
@@ -3988,12 +3990,15 @@ class Card:
 
       # Add waveform and digital outs to buffer
       channel_data = data[channel]
-      for sample_index, sample in enumerate(channel_data):
-        # Discretise waveform, and blank out bits meant for aux digital out
-        data_pointer[channel + channels*sample_index] = int(limit*np.clip(sample, -1, 1)) & (~(0x7 << max_bits))
-        # Append aux digital outs
-        for reverse_lookup in aux_data_reverse_lookup:
-          data_pointer[channel + channels*sample_index] |= (int(aux_data[reverse_lookup[0]][sample_index]) & 1) << reverse_lookup[1]
+      if aux_data is None:
+        data_np[channel::channels] = limit*np.clip(channel_data, -1, 1)
+      else:
+        for sample_index, sample in enumerate(channel_data):
+          # Discretise waveform, and blank out bits meant for aux digital out
+          data_pointer[channel + channels*sample_index] = int(limit*np.clip(sample, -1, 1)) & (~(0x7 << max_bits))
+          # Append aux digital outs
+          for reverse_lookup in aux_data_reverse_lookup:
+            data_pointer[channel + channels*sample_index] |= (int(aux_data[reverse_lookup[0]][sample_index]) & 1) << reverse_lookup[1]
     
     # Disable ports if digital io are not in use
     for port in range(3):
