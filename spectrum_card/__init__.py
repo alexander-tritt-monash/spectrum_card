@@ -1936,7 +1936,7 @@ class Card:
         """
         return self._get_int32(spcm.SPC_PCIEXTFEATURES)
 
-    def get_readout_features(self):
+    def get_analogue_output_features(self):
         """
         Reads :obj:`SPC_READAOFEATURES`.
         For decoded information, use :obj:`get_features_information` instead.
@@ -1947,6 +1947,30 @@ class Card:
             Bit code.
         """
         return self._get_int32(spcm.SPC_READAOFEATURES)
+
+    def get_readout_features(self):
+        """
+        Reads :obj:`SPC_READAOFEATURES`.
+        For decoded information, use :obj:`get_features_information` instead.
+
+        Returns
+        -------
+        features : :obj:`int`
+            Bit code.
+        """
+        return self.get_readout_features()
+
+    def get_analogue_input_features(self):
+        """
+        Reads :obj:`SPC_READAIFEATURES`.
+        For decoded information, use :obj:`get_features_information` instead.
+
+        Returns
+        -------
+        features : :obj:`int`
+            Bit code.
+        """
+        return self._get_int32(spcm.SPC_READAIFEATURES)
 
     def get_features_information(self):
         """
@@ -2030,7 +2054,7 @@ class Card:
         SPCM_AO_PROGSTOPLEVEL = 0x00000040
         SPCM_AO_DOUBLEOUT = 0x00000080
         SPCM_AO_ENABLEOUT = 0x00000100
-        bitmap = self.get_readout_features()
+        bitmap = self.get_analogue_output_features()
         if bitmap & SPCM_AO_SET:
             features.append("Single ended output")
         if bitmap & SPCM_AO_DIFF:
@@ -2047,6 +2071,40 @@ class Card:
             features.append("Double output")
         if bitmap & SPCM_AO_ENABLEOUT:
             features.append("Output enable functions")
+
+        bitmap = self.get_analogue_output_features()
+        if bitmap & spcm.SPCM_AI_TERM:
+            features.append("Input terminaton")
+        if bitmap & spcm.SPCM_AI_SE:
+            features.append("Single-ended input")
+        if bitmap & spcm.SPCM_AI_DIFF:
+            features.append("Differential input with no channel loss")
+        if bitmap & spcm.SPCM_AI_OFFSPERCENT:
+            features.append("Programmable offset in percent")
+        if bitmap & spcm.SPCM_AI_OFFSMV:
+            features.append("Programmable offset in mV")
+        if bitmap & spcm.SPCM_AI_OVERRANGEDETECT:
+            features.append("Overrange detection")
+        if bitmap & spcm.SPCM_AI_DCCOUPLING:
+            features.append("Input DC coupling")
+        if bitmap & spcm.SPCM_AI_ACCOUPLING:
+            features.append("Input AC coupling")
+        if bitmap & spcm.SPCM_AI_LOWPASS:
+            features.append("Input selectable lowpass")
+        if bitmap & spcm.SPCM_AI_DIFFMUX:
+            features.append("Differential input with channel loss")
+        if bitmap & spcm.SPCM_AI_AUTOCALOFFS:
+            features.append("Autocalibration of input offset")
+        if bitmap & spcm.SPCM_AI_AUTOCALGAIN:
+            features.append("Autocalibration of input gain")
+        if bitmap & spcm.SPCM_AI_AUTOCALOFFSNOIN:
+            features.append("Autocalibration of offset if inputs are open")
+        if bitmap & spcm.SPCM_AI_HIGHIMP:
+            features.append("High impedance inputs")
+        if bitmap & spcm.SPCM_AI_LOWIMP:
+            features.append("Low impedance inputs")
+        if bitmap & spcm.SPCM_AI_INDIVPULSEWIDTH:
+            features.append("Per-channel trigger pulsewidth")
 
         bitmap = self.get_available_sequence_features()
         if bitmap & spcm.SPCSEQ_ENDLOOPONTRIG:
@@ -2233,21 +2291,52 @@ class Card:
         mode = self.get_available_modes()
         modes = []
         if mode & spcm.SPC_REP_STD_SINGLE:
-            modes.append("Single")
+            modes.append("Single output")
         if mode & spcm.SPC_REP_STD_MULTI:
-            modes.append("Multi")
+            modes.append("Multi output")
         if mode & spcm.SPC_REP_STD_GATE:
-            modes.append("Gate")
+            modes.append("Gated output")
         if mode & spcm.SPC_REP_STD_SINGLERESTART:
-            modes.append("Single restart")
+            modes.append("Single restart output")
         if mode & spcm.SPC_REP_STD_SEQUENCE:
-            modes.append("Sequence")
+            modes.append("Sequence output")
         if mode & spcm.SPC_REP_FIFO_SINGLE:
-            modes.append("FIFO single")
+            modes.append("FIFO single output")
         if mode & spcm.SPC_REP_FIFO_MULTI:
-            modes.append("FIFO multi")
+            modes.append("FIFO multi output")
         if mode & spcm.SPC_REP_FIFO_GATE:
-            modes.append("FIFO gate")
+            modes.append("FIFO gated output")
+
+        if mode & spcm.SPC_REC_STD_SINGLE:
+            modes.append("Single input")
+        if mode & spcm.SPC_REC_STD_MULTI:
+            modes.append("Multi input")
+        if mode & spcm.SPC_REC_STD_GATE:
+            modes.append("Gated input")
+        if mode & spcm.SPC_REC_STD_ABA:
+            modes.append("ABA input")
+        if mode & spcm.SPC_REC_STD_SEGSTATS:
+            modes.append("Block segment statistics input")
+        if mode & spcm.SPC_REC_STD_AVERAGE:
+            modes.append("Block average input")
+        if mode & spcm.SPC_REC_STD_BOXCAR:
+            modes.append("Boxcar average input")
+        if mode & spcm.SPC_REC_FIFO_SINGLE:
+            modes.append("FIFO single input")
+        if mode & spcm.SPC_REC_FIFO_MULTI:
+            modes.append("FIFO multi input")
+        if mode & spcm.SPC_REC_FIFO_GATE:
+            modes.append("FIFO gated input")
+        if mode & spcm.SPC_REC_FIFO_ABA:
+            modes.append("FIFO ABA input")
+        if mode & spcm.SPC_REC_FIFO_SEGSTATS:
+            modes.append("FIFO block segment staistics input")
+        if mode & spcm.SPC_REC_FIFO_AVERAGE:
+            modes.append("FIFO block average input")
+        if mode & spcm.SPC_REC_FIFO_BOXCAR:
+            modes.append("FIFO boxcar average input")
+        if mode & spcm.SPC_REC_FIFO_SINGLE_MONITOR:
+            modes.append("FIFO single monitor input")
         return modes
 
     # Sample rate -------------------------------------------------------------
@@ -5390,3 +5479,21 @@ class Card:
         """
         bit_code = self.get_io_asynchronous_register()
         return (bit_code & (1 << port)) != 0
+
+    # Analogue Input ----------------------------------------------------------
+    # =========================================================================
+    def set_termination_50ohm(self, channel_index: int, enable: bool):
+        bit_code = \
+            spcm.SPC_50OHM0 + channel_index*(spcm.SPC_50OHM0 - spcm.SPC_50OHM1)
+        self._set_int32(bit_code, enable)
+
+    def enable_termination_50ohm(self, channel_index: int):
+        self.set_termination_50ohm(channel_index, 1)
+
+    def disable_termination_50ohm(self, channel_index: int):
+        self.set_50ohm(channel_index, 0)
+
+    def get_termination_50ohm(self, channel_index: int):
+        bit_code = \
+            spcm.SPC_50OHM0 + channel_index*(spcm.SPC_50OHM0 - spcm.SPC_50OHM1)
+        return self._get_int32(bit_code)
